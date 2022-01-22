@@ -10,4 +10,4 @@ In the generator pattern, memory usage remains flat as the strings are produced 
 
 ![Generator Memory Usage](media/python_generation_memory_usage.png)
 
-Images generated using the fabulous tool ['mem_usage_ui'](https://github.com/parikls/mem_usage_ui), by @parikls.
+Images generated using the fabulous tool ['mem_usage_ui'](https://github.com/parikls/mem_usage_ui), by [@parikls](https://github.com/parikls).
