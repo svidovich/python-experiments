@@ -1,8 +1,13 @@
+import inspect
+
 from typing import Generator
 
+# yapf: disable
+generator_just_created = lambda g: inspect.getgeneratorstate(g) == inspect.GEN_CREATED
 
 def sender(line: str, target: Generator):
-    target.send(None)
+    if generator_just_created(target):
+        target.send(None)
     target.send(line)
 
 
