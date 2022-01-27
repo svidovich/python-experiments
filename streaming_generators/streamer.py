@@ -1,5 +1,6 @@
 import inspect
 
+from io import TextIOWrapper
 from typing import Generator
 
 # yapf: disable
@@ -11,16 +12,17 @@ def sender(line: str, target: Generator):
     target.send(line)
 
 
-def receiver(suffix: str):
+def receiver(suffix: str, file_handle: TextIOWrapper):
     while True:
         line = (yield)
-        print(f'{line}-{suffix}')
+        file_handle.write(f'{line}-{suffix}\n')
 
 
 def main():
     test_strings = ['this', 'is', 'a', 'data', 'source']
-    for string in test_strings:
-        sender(string, receiver('mewoth'))
+    with open('coolfile', 'w') as file_handle:
+        for string in test_strings:
+            sender(string, receiver('mewoth', file_handle))
 
 
 if __name__ == '__main__':
