@@ -23,6 +23,18 @@ services:
       - type: bind
         source: ./src/
         target: /src/
+  queueing:
+    build:
+      context: .
+      dockerfile: rabbitmq.Dockerfile
+    hostname: "message-queue"
+    ports:
+      - "5672:5672" # Service
+      - "15672:15672" # Web interface
+    volumes:
+      # Persist rabbitmq data
+      - rabbit-data:/var/lib/rabbitmq/mnesia/
 
 volumes:
   database-volume:
+  rabbit-data:
