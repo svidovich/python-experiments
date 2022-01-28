@@ -1,0 +1,16 @@
+{
+    "vhosts": [
+        {
+            "name": "/"
+        }
+    ],
+    "queues": [
+        {
+            "name": "messages",
+            "vhost": "/",
+            "durable": true,
+            "auto_delete": false,
+            "arguments": {}
+        }
+    ]
+}
