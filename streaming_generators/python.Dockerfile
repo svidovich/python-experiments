@@ -1,5 +1,6 @@
-from python:3.10-slim-buster
+FROM python:3.10-slim-buster
 
-add src /src
+ADD src /src
+RUN python3 -m pip install -r /src/requirements.txt
 
-cmd ["python", "-m", "http.server"]
+CMD ["python", "-m", "http.server"]
