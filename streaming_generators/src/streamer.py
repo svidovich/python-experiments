@@ -12,7 +12,7 @@ def sender(line: str, target: Generator):
     target.send(line)
 
 
-def receiver(suffix: str, file_handle: TextIOWrapper):
+def receiver(suffix: str, file_handle: TextIOWrapper) -> Generator:
     while True:
         line = (yield)
         file_handle.write(f'{line}-{suffix}\n')
