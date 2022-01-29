@@ -3,8 +3,8 @@ import pika
 
 from abc import ABC, abstractmethod
 from pika import connection
-
 from psycopg2 import connect
+from typing import Any
 
 
 @attr.s
@@ -53,3 +53,18 @@ class RabbitMessageAdapter(MessageAdapter):
             credentials=credentials)
 
         self.connection = pika.BlockingConnection(pika_parameters)
+        self.channel = self.connection.channel()
+
+    def send_message(self, message: Any):
+        self.channel.basic_publish(
+            exchange=self.connection_params.exchange,
+            routing_key=self.connection_params.queue_name,
+            body=message)
+
+    def receiver(self, ch, method, properties, body):
+        yield body  # TODO: Hm
+
+    def receive_message(self):
+        self.channel.basic_consume(queue=self.connection_params.queue_name,
+                                   auto_ack=True,
+                                   on_message_callback=self.receiver)
