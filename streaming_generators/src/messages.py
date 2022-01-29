@@ -61,10 +61,7 @@ class RabbitMessageAdapter(MessageAdapter):
             routing_key=self.connection_params.queue_name,
             body=message)
 
-    def receiver(self, ch, method, properties, body):
-        yield body  # TODO: Hm
-
     def receive_message(self):
-        self.channel.basic_consume(queue=self.connection_params.queue_name,
-                                   auto_ack=True,
-                                   on_message_callback=self.receiver)
+        message = self.channel.basic_get(
+            queue=self.connection_params.queue_name, auto_ack=True)
+        return message
