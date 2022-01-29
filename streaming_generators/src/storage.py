@@ -40,3 +40,6 @@ class PostgresStorageAdapter(StorageAdapterBase):
         except Exception as e:
             print(f'An error occurred during connection to database: {e}')
             return False
+
+    def store_data(self, data):
+        pass
