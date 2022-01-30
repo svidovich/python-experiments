@@ -39,6 +39,11 @@ class MessageAdapter(ABC):
         raise NotImplemented()
 
 
+# Returned by the server if there was no message in the queue to retrieve;
+# see documentation: https://pika.readthedocs.io/en/stable/examples/blocking_basic_get.html
+PIKA_NULL_MESSAGE = (None, None, None)
+
+# How frequently to poll. TODO: Argument?
 POLL_INTERVAL = 1.0
 
 
@@ -90,7 +95,7 @@ class RabbitMessageAdapter(MessageAdapter):
     def receive_messages(self) -> Generator:
         while True:
             message = self.receive_message()
-            if message is None:
+            if message == PIKA_NULL_MESSAGE:
                 sleep(POLL_INTERVAL)
                 continue
 
