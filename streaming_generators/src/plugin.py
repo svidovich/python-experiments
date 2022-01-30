@@ -1,7 +1,11 @@
+import attr
+import time
+
 from abc import ABC, abstractmethod
-from typing import Generator
+from typing import Generator, List, Optional
 
 from utils import prime_generator
+from uuid import uuid4
 
 
 # NOTE: The processing plugin should be decoupled from the message consumer
@@ -21,12 +25,25 @@ class ProcessingPlugin(ABC):
             target.send(output)
 
 
-from uuid import uuid4
+# TODO There's a right way to do this, let's google it later
+class SimpleMessageSchema(object):
+
+    def __init__(self):
+        self.fields = {'message_body'}
+
+    def validate(self, message: dict) -> bool:
+        return True if len(self.fields.intersection(set(message.keys()))) == len(self.fields) else False
 
 
-# TODO: Remove this. It's just here so I can see if all of this works
-class TestPlugin(ProcessingPlugin):
+class SimplePlugin(ProcessingPlugin):
 
-    def process(self, message: dict):
-        message['processing_id'] = str(uuid4())
-        return message
+    def __init__(self):
+        self.schema = SimpleMessageSchema()
+
+    def process(self, message: dict) -> Optional[dict]:
+        if self.schema.validate(message):
+            message['processing_id'] = str(uuid4())
+            message['timestamp'] = int(time.time())
+            return message
+        else:
+            return None
