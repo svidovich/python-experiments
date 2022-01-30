@@ -52,10 +52,12 @@ class RabbitMessageAdapter(MessageAdapter):
 
     def _connect(self):
         connection_params = self.connection_params
-        credentials = None
-        if connection_params.username and connection_params.password:
-            credentials = pika.PlainCredentials(connection_params.username,
-                                                connection_params.password)
+
+        # yapf: disable
+        credentials = pika.PlainCredentials(
+            connection_params.username or str(),
+            connection_params.password or str())
+        # yapf: enable
 
         pika_parameters = pika.ConnectionParameters(
             host=connection_params.host,
