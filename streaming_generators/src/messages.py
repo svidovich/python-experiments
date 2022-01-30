@@ -1,5 +1,6 @@
 import attr
 import pika
+import json
 from utils import prime_generator
 
 from abc import ABC, abstractmethod
@@ -79,6 +80,16 @@ class RabbitMessageAdapter(MessageAdapter):
         self.connection = pika.BlockingConnection(pika_parameters)
         self.channel = self.connection.channel()
 
+    def basic_json_deserialize(self, message):
+        """
+        Takes a message received from RabbitMQ and tries to deserialize it as JSON.
+        If it's successful, returns the deserialized JSON; otherwise, returns the message.
+        """
+        try:
+            return json.loads(message)
+        except:
+            return message
+
     def send_message(self, message: Any):
         """
         Sends a message to a RabbitMQ Queue.
@@ -103,5 +114,7 @@ class RabbitMessageAdapter(MessageAdapter):
 
     def pipeline_messages(self, target: Generator):
         for message in self.receive_messages():
+            status, properties, message_content = message
+            message_content = self.basic_json_deserialize(message_content)
             prime_generator(target)
-            target.send(message)
+            target.send(message_content)
