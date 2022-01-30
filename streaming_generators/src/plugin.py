@@ -28,5 +28,5 @@ from uuid import uuid4
 class TestPlugin(ProcessingPlugin):
 
     def process(self, message: dict):
-        message = f'{message}; {uuid4()}'
+        message['processing_id'] = str(uuid4())
         return message
