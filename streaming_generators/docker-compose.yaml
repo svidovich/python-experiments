@@ -20,6 +20,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
       - MESSAGES_QUEUE=${MESSAGES_QUEUE}
+      - RABBITMQ_HOST=${MESSAGES_HOSTNAME}
     volumes:
       - type: bind
         source: ./src/
@@ -28,7 +29,7 @@ services:
     build:
       context: .
       dockerfile: rabbitmq.Dockerfile
-    hostname: "message-queue"
+    hostname: ${MESSAGES_HOSTNAME}
     ports:
       - "5672:5672" # Service
       - "15672:15672" # Web interface
