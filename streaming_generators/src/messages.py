@@ -7,6 +7,8 @@ from abc import ABC, abstractmethod
 from time import sleep
 from typing import Any, Generator, Tuple, Union
 
+from constants import PIKA_NULL_MESSAGE, POLL_INTERVAL
+
 
 @attr.s
 class RabbitConnectionParams(object):
@@ -59,15 +61,6 @@ class MessageAdapter(ABC):
     @abstractmethod
     def send_message(self, message):
         raise NotImplemented()
-
-
-# TODO Constants file?
-# Returned by the server if there was no message in the queue to retrieve;
-# see documentation: https://pika.readthedocs.io/en/stable/examples/blocking_basic_get.html
-PIKA_NULL_MESSAGE = (None, None, None)
-
-# How frequently to poll.
-POLL_INTERVAL = 1.0
 
 
 class RabbitMessageAdapter(MessageAdapter):
