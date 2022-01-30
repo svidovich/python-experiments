@@ -16,4 +16,7 @@ CREATE TABLE IF NOT EXISTS message_table (
     message_timestamp INTEGER NOT NULL
 );
 
+
+-- NOTE: NOT SECURE, NOT PRODUCTION READY. Make this grant specific permissions
+-- on your chosen table. GRANT...
 ALTER TABLE message_table OWNER to pipeline_user;
