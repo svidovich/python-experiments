@@ -1,6 +1,6 @@
 import os
 
-from plugin import TestPlugin
+from plugin import SimplePlugin
 from messages import RabbitMessageAdapter, RabbitConnectionParams
 
 RABBITMQ_HOST = os.environ['RABBITMQ_HOST']
@@ -10,18 +10,19 @@ MESSAGES_QUEUE = os.environ['MESSAGES_QUEUE']
 def message_printer():
     while True:
         message = (yield)
-        print(message)
+        if message is not None:
+            print(message)
+        else:
+            print('Message is None.')
 
 
 def main():
-    test_plugin = TestPlugin()
-    rabbit_connection_params = RabbitConnectionParams(
-        host=RABBITMQ_HOST, queue_name=MESSAGES_QUEUE)
+    test_plugin = SimplePlugin()
+    rabbit_connection_params = RabbitConnectionParams(host=RABBITMQ_HOST, queue_name=MESSAGES_QUEUE)
 
     message_adapter = RabbitMessageAdapter(rabbit_connection_params)
 
-    message_adapter.pipeline_messages(
-        test_plugin.processing_loop(target=message_printer()))
+    message_adapter.pipeline_messages(test_plugin.processing_loop(target=message_printer()))
 
 
 if __name__ == '__main__':
