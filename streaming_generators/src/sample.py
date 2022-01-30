@@ -1,6 +1,10 @@
-from email.message import Message
+import os
+
 from plugin import TestPlugin
 from messages import RabbitMessageAdapter, RabbitConnectionParams
+
+RABBITMQ_HOST = os.environ['RABBITMQ_HOST']
+MESSAGES_QUEUE = os.environ['MESSAGES_QUEUE']
 
 
 def message_printer(message):
@@ -11,8 +15,8 @@ def message_printer(message):
 
 def main():
     test_plugin = TestPlugin()
-    rabbit_connection_params = RabbitConnectionParams(host="0.0.0.0",
-                                                      queue_name="messages")
+    rabbit_connection_params = RabbitConnectionParams(
+        host=RABBITMQ_HOST, queue_name=MESSAGES_QUEUE)
 
     message_adapter = RabbitMessageAdapter(rabbit_connection_params)
 
