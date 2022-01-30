@@ -9,11 +9,11 @@ ALTER USER pipeline_user WITH PASSWORD 'pipeline'; -- Beware: you probably shoul
 
 \c postgres
 
-CREATE TABLE IF NOT EXISTS test_table (
+CREATE TABLE IF NOT EXISTS message_table (
     id SERIAL PRIMARY KEY,
     message_id VARCHAR(64) NOT NULL,
     message_body VARCHAR(64) NOT NULL,
     message_timestamp INTEGER NOT NULL
 );
 
--- ALTER TABLE test_table OWNER to spark;
+ALTER TABLE message_table OWNER to pipeline_user;
