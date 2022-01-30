@@ -1,9 +1,11 @@
+from email.generator import Generator
 import attr
 import pika
 
 from abc import ABC, abstractmethod
 from pika import connection
 from psycopg2 import connect
+from time import sleep
 from typing import Any
 
 
@@ -18,7 +20,7 @@ class RabbitConnectionParams(object):
 
 
 class MessageAdapter(ABC):
-
+    # TODO We need some docs here
     @abstractmethod
     def _connect(self):
         raise NotImplemented()
@@ -28,8 +30,18 @@ class MessageAdapter(ABC):
         raise NotImplemented()
 
     @abstractmethod
+    def receive_messages(self):
+        raise NotImplemented()
+
+    def pipeline_messages(self):
+        raise NotImplemented()
+
+    @abstractmethod
     def send_message(self, message):
         raise NotImplemented()
+
+
+POLL_INTERVAL = 1.0
 
 
 class RabbitMessageAdapter(MessageAdapter):
@@ -62,6 +74,14 @@ class RabbitMessageAdapter(MessageAdapter):
             body=message)
 
     def receive_message(self):
-        message = self.channel.basic_get(
-            queue=self.connection_params.queue_name, auto_ack=True)
-        return message
+        return self.channel.basic_get(queue=self.connection_params.queue_name,
+                                      auto_ack=True)
+
+    def receive_messages(self) -> Generator:
+        while True:
+            message = self.receive_message()
+            if message is None:
+                sleep(POLL_INTERVAL)
+                continue
+
+            yield message
