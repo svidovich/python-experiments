@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 
 
+# NOTE: The processing plugin should be decoupled from the message consumer
+# and the storage adapter. All of them should essentially be generators that
+# pipeline the data through.
 class ProcessingPlugin(ABC):
-    def __init__(self, message_adapter, storage_adapter):
-        self.message_adapter = message_adapter
-        self.storage_adapter = storage_adapter
 
     @abstractmethod
     def process(self):
