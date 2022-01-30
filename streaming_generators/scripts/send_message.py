@@ -20,17 +20,7 @@ def main():
     channel = connection.channel()
     channel.basic_publish(exchange='', routing_key=queue_name, body=message)
     print('Published message.')
-
-    # channel.basic_consume(queue='messages',
-    #                       auto_ack=True,
-    #                       on_message_callback=recv_callback)
-
-    # print('Consuming...')
-    # try:
-    #     channel.start_consuming()
-    # except KeyboardInterrupt:
-    #     channel.close()
-    #     exit(0)
+    channel.close()
 
 
 if __name__ == '__main__':
