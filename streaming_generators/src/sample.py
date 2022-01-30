@@ -7,7 +7,7 @@ RABBITMQ_HOST = os.environ['RABBITMQ_HOST']
 MESSAGES_QUEUE = os.environ['MESSAGES_QUEUE']
 
 
-def message_printer(message):
+def message_printer():
     while True:
         message = (yield)
         print(message)
@@ -21,7 +21,7 @@ def main():
     message_adapter = RabbitMessageAdapter(rabbit_connection_params)
 
     message_adapter.pipeline_messages(
-        test_plugin.processing_loop(target=message_printer))
+        test_plugin.processing_loop(target=message_printer()))
 
 
 if __name__ == '__main__':
