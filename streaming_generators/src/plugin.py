@@ -13,9 +13,20 @@ class ProcessingPlugin(ABC):
     def process(self, message):
         raise NotImplemented
 
-    def processing_loop(self, target: Generator = None):
+    def processing_loop(self, target: Generator):
         while True:
             message = (yield)
             output = self.process(message)
             prime_generator(target)
             target.send(output)
+
+
+from uuid import uuid4
+
+
+# TODO: Remove this. It's just here so I can see if all of this works
+class TestPlugin(ProcessingPlugin):
+
+    def process(self, message: dict):
+        message['processing_id'] = uuid4()
+        return message
