@@ -1,12 +1,10 @@
-from email.generator import Generator
 import attr
 import pika
+from utils import prime_generator
 
 from abc import ABC, abstractmethod
-from pika import connection
-from psycopg2 import connect
 from time import sleep
-from typing import Any
+from typing import Any, Generator
 
 
 @attr.s
@@ -68,6 +66,9 @@ class RabbitMessageAdapter(MessageAdapter):
         self.channel = self.connection.channel()
 
     def send_message(self, message: Any):
+        """
+        Sends a message to a RabbitMQ Queue.
+        """
         self.channel.basic_publish(
             exchange=self.connection_params.exchange,
             routing_key=self.connection_params.queue_name,
@@ -85,3 +86,8 @@ class RabbitMessageAdapter(MessageAdapter):
                 continue
 
             yield message
+
+    def pipeline_messages(self, target: Generator):
+        for message in self.receive_messages():
+            prime_generator(target)
+            target.send(message)
