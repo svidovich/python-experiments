@@ -42,8 +42,8 @@ class SimplePlugin(ProcessingPlugin):
 
     def process(self, message: dict) -> Optional[dict]:
         if self.schema.validate(message):
-            message['processing_id'] = str(uuid4())
-            message['timestamp'] = int(time.time())
+            message['message_id'] = str(uuid4())
+            message['message_timestamp'] = int(time.time())
             # NOTE: In a more official environment, this would probably
             # be something on the class. At the very least, the storage
             # adapter downstream needs some way to know where we're meant
