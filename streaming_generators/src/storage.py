@@ -2,6 +2,9 @@ import attr
 import psycopg2
 
 from abc import ABC, abstractmethod
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @attr.s
@@ -28,9 +31,8 @@ class StorageAdapterBase(ABC):
             try:
                 data = (yield)
                 self.store_data(data)
-                return True
-            except Exception:
-                return False
+            except Exception as e:
+                logger.exception(e)
 
 
 class PostgresStorageAdapter(StorageAdapterBase):
@@ -54,9 +56,19 @@ class PostgresStorageAdapter(StorageAdapterBase):
         # TODO: This would be prettier if we were passing a data class around
         table: str = data.pop('output_location', None)
         if table is not None:
-            columns = list(table.keys())
-            values = [data[column] for column in columns]
+            # TODO: Hackly. Be careful. Psycopg... really sucks, generally, lol.
+            # This type of thing is why people use ORMs.
+            columns = list(data.keys())
+            values = ",".join([f"'{data[column]}'" for column in columns])
 
-            sql_statement = f"insert into {table}({','.join(columns)} values ({','.join(values)}))"
+            sql_statement = f"insert into {table}({','.join(columns)}) values ({values})"
             with self.connection.cursor() as cursor:
-                cursor.execute(sql_statement)
+                # TODO / NOTE: Generally, this isn't the pattern. We probably want
+                # a queue / consumer kind of thing so we can insert lots at once.
+                # For now, let's just get writing to a database.
+                try:
+                    cursor.execute(sql_statement)
+                    self.connection.commit()
+                except Exception as e:
+                    logger.exception(e)
+                    self.connection.rollback()
