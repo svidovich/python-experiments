@@ -45,7 +45,7 @@ def main():
                                                     password=DATABASE_PASSWORD)
     storage_adapter = PostgresStorageAdapter(postgres_connection_params)
 
-    message_adapter.pipeline_messages(test_plugin.processing_loop(target=message_printer()))
+    message_adapter.pipeline_messages(test_plugin.processing_loop(target=storage_adapter.stream_data_to_store()))
 
 
 if __name__ == '__main__':
