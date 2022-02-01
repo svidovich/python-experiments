@@ -3,9 +3,15 @@ import time
 
 from plugin import SimplePlugin
 from messages import RabbitMessageAdapter, RabbitConnectionParams
+from storage import PostgresStorageAdapter, PGConnectionParams
 
-RABBITMQ_HOST = os.environ['RABBITMQ_HOST']
+DATABASE = os.environ["POSTGRES_DB"]
+# TODO: Things that aren't secure for 1000, Alex.
+DATABASE_USER = os.environ['PIPELINE_POSTGRES_USER']
+DATABASE_PASSWORD = os.environ['PIPELINE_POSTGRES_PASSWORD']
+DATABASE_HOST = os.environ['DATABASE_HOST']
 MESSAGES_QUEUE = os.environ['MESSAGES_QUEUE']
+RABBITMQ_HOST = os.environ['RABBITMQ_HOST']
 
 
 def message_printer():
@@ -32,6 +38,12 @@ def main():
         except:
             time.sleep(1)
             continue
+
+    postgres_connection_params = PGConnectionParams(host=DATABASE_HOST,
+                                                    dbname=DATABASE,
+                                                    username=DATABASE_USER,
+                                                    password=DATABASE_PASSWORD)
+    storage_adapter = PostgresStorageAdapter(postgres_connection_params)
 
     message_adapter.pipeline_messages(test_plugin.processing_loop(target=message_printer()))
 
