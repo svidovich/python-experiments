@@ -44,6 +44,11 @@ class SimplePlugin(ProcessingPlugin):
         if self.schema.validate(message):
             message['processing_id'] = str(uuid4())
             message['timestamp'] = int(time.time())
+            # NOTE: In a more official environment, this would probably
+            # be something on the class. At the very least, the storage
+            # adapter downstream needs some way to know where we're meant
+            # to put stuff.
+            message['output_location'] = 'message_table'
             return message
         else:
             return None
