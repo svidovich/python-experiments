@@ -45,3 +45,11 @@ We pick postgres because again, easy to set up. I _don't_ use a management frame
 ```
 psql -h localhost -p 5432 -d postgres -U pipeline_user
 ```
+
+Then, select from the built in messages table with:
+
+```
+select * from message_table;
+```
+
+You should see your message in the table, supposing you sent one.
