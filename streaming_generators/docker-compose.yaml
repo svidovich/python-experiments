@@ -2,6 +2,7 @@ version: "3.8"
 
 services:
   database:
+    hostname: ${DATABASE_HOSTNAME}
     image: postgres:12
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -22,6 +23,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - MESSAGES_QUEUE=${MESSAGES_QUEUE}
       - RABBITMQ_HOST=${MESSAGES_HOSTNAME}
+      - DATABASE_HOST=${DATABASE_HOSTNAME}
     volumes:
       - type: bind
         source: ./src/
