@@ -2,10 +2,16 @@ import attr
 import time
 
 from abc import ABC, abstractmethod
-from typing import Generator, List, Optional
+from typing import Any, Generator, List, Optional
 
 from utils import prime_generator
 from uuid import uuid4
+
+
+@attr.s(kw_only=True, auto_attribs=True)
+class PluginOutput(object):
+    output_location: str = attr.ib(required=True)
+    output: Any = attr.ib()
 
 
 # NOTE: The processing plugin should be decoupled from the message consumer
@@ -20,7 +26,7 @@ class ProcessingPlugin(ABC):
     def processing_loop(self, target: Generator):
         while True:
             message = (yield)
-            output = self.process(message)
+            output: PluginOutput = self.process(message)
             prime_generator(target)
             target.send(output)
 
@@ -40,7 +46,7 @@ class SimplePlugin(ProcessingPlugin):
     def __init__(self):
         self.schema = SimpleMessageSchema()
 
-    def process(self, message: dict) -> Optional[dict]:
+    def process(self, message: dict) -> Optional[PluginOutput]:
         if self.schema.validate(message):
             message['message_id'] = str(uuid4())
             message['message_timestamp'] = int(time.time())
@@ -49,6 +55,6 @@ class SimplePlugin(ProcessingPlugin):
             # adapter downstream needs some way to know where we're meant
             # to put stuff.
             message['output_location'] = 'message_table'
-            return message
+            return PluginOutput(output_location='message_table', output=message)
         else:
             return None

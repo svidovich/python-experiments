@@ -2,6 +2,7 @@ import attr
 import psycopg2
 
 from abc import ABC, abstractmethod
+from plugin import PluginOutput
 import logging
 
 logger = logging.getLogger(__name__)
@@ -52,9 +53,9 @@ class PostgresStorageAdapter(StorageAdapterBase):
             print(f'An error occurred during connection to database: {e}')
             return False
 
-    def store_data(self, data: dict):
-        # TODO: This would be prettier if we were passing a data class around
-        table: str = data.pop('output_location', None)
+    def store_data(self, data: PluginOutput):
+        table = data.output_location
+        data = data.output  # TODO: Stupid
         if table is not None:
             # TODO: Hackly. Be careful. Psycopg... really sucks, generally, lol.
             # This type of thing is why people use ORMs.
