@@ -11,6 +11,7 @@ def main():
     # yapf: disable
     parser.add_argument('-q', '--queue-name', help='The name of the message queue')
     parser.add_argument('-m', '--message', help='The message to send to the queue')
+    parser.add_argument('-d', '--debug', action='store_true', help='Debug logging switch')
     args = parser.parse_args()
     queue_name: str = args.queue_name
     message: str = args.message
@@ -19,7 +20,8 @@ def main():
     # yapf: enable
     channel = connection.channel()
     channel.basic_publish(exchange='', routing_key=queue_name, body=message)
-    print('Published message.')
+    if args.debug:
+        print(f'Published message: {message}')
     channel.close()
 
 
