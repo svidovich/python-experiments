@@ -1,9 +1,12 @@
 import attr
+import logging
 import psycopg2
 
 from abc import ABC, abstractmethod
+
+from sqlalchemy import create_engine, MetaData, Table
+
 from plugin import PluginOutput
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -43,33 +46,24 @@ class PostgresStorageAdapter(StorageAdapterBase):
 
     def _connect(self, connection_params: PGConnectionParams) -> bool:
         try:
-            self.connection = psycopg2.connect(dbname=connection_params.dbname,
-                                               host=connection_params.host,
-                                               user=connection_params.username,
-                                               password=connection_params.password,
-                                               port=connection_params.port)
+            postgres_connection_string = f'postgresql+psycopg2://{connection_params.username}:{connection_params.password}@{connection_params.host}:{connection_params.port}/{connection_params.dbname}'
+            self.engine = create_engine(postgres_connection_string, echo=True)
+            self.connection = self.engine.connect()
+            print(f'Engine dir {dir(self.engine)}')
+            print(f'Connection dir {dir(self.connection)}')
             return True
         except Exception as e:
             print(f'An error occurred during connection to database: {e}')
             return False
 
-    def store_data(self, data: PluginOutput):
-        table = data.output_location
-        data = data.output  # TODO: Stupid
-        if table is not None:
-            # TODO: Hackly. Be careful. Psycopg... really sucks, generally, lol.
-            # This type of thing is why people use ORMs.
-            columns = list(data.keys())
-            values = ",".join([f"'{data[column]}'" for column in columns])
+    def store_data(self, plugin_output: PluginOutput):
+        table_name = plugin_output.output_location
 
-            sql_statement = f"insert into {table}({','.join(columns)}) values ({values})"
-            with self.connection.cursor() as cursor:
-                # TODO / NOTE: Generally, this isn't the pattern. We probably want
-                # a queue / consumer kind of thing so we can insert lots at once.
-                # For now, let's just get writing to a database.
-                try:
-                    cursor.execute(sql_statement)
-                    self.connection.commit()
-                except Exception as e:
-                    logger.exception(e)
-                    self.connection.rollback()
+        if table_name in self.engine.table_names():
+            metadata = MetaData(bind=None)
+            table = Table(table_name, metadata, autoload=True, autoload_with=self.engine)
+            statement = table.insert().values(**plugin_output.output)
+            print(f'Statement: {type(statement)}; {statement}')
+            self.connection.execute(statement)
+        else:
+            raise Exception(f"{table_name} is not a relation on database {self.engine.url.database}")
