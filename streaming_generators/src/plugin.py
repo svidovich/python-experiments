@@ -10,7 +10,7 @@ from uuid import uuid4
 
 @attr.s(kw_only=True, auto_attribs=True)
 class PluginOutput(object):
-    output_location: str = attr.ib(required=True)
+    output_location: str = attr.ib()
     output: Any = attr.ib()
 
 
