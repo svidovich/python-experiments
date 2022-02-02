@@ -22,7 +22,7 @@ def main():
     channel.basic_publish(exchange='', routing_key=queue_name, body=message)
     if args.debug:
         print(f'Published message: {message}')
-    channel.close()
+    connection.close()
 
 
 if __name__ == '__main__':
