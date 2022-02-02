@@ -24,6 +24,7 @@ services:
       - MESSAGES_QUEUE=${MESSAGES_QUEUE}
       - RABBITMQ_HOST=${MESSAGES_HOSTNAME}
       - DATABASE_HOST=${DATABASE_HOSTNAME}
+      - PYTHONUNBUFFERED=0
     volumes:
       - type: bind
         source: ./src/
