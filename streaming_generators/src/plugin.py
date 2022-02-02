@@ -54,7 +54,6 @@ class SimplePlugin(ProcessingPlugin):
             # be something on the class. At the very least, the storage
             # adapter downstream needs some way to know where we're meant
             # to put stuff.
-            message['output_location'] = 'message_table'
             return PluginOutput(output_location='message_table', output=message)
         else:
             return None
