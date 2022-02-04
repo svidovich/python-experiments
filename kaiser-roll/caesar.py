@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 You, too, can encrypt. Really!
 """
@@ -63,6 +64,64 @@ int2chr = {
     25: 'z',
 }
 
+int2cap = {
+    0: 'A',
+    1: 'B',
+    2: 'C',
+    3: 'D',
+    4: 'E',
+    5: 'F',
+    6: 'G',
+    7: 'H',
+    8: 'I',
+    9: 'J',
+    10: 'K',
+    11: 'L',
+    12: 'M',
+    13: 'N',
+    14: 'O',
+    15: 'P',
+    16: 'Q',
+    17: 'R',
+    18: 'S',
+    19: 'T',
+    20: 'U',
+    21: 'V',
+    22: 'W',
+    23: 'X',
+    24: 'Y',
+    25: 'Z',
+}
+
+cap2int = {
+    'A': 0,
+    'B': 1,
+    'C': 2,
+    'D': 3,
+    'E': 4,
+    'F': 5,
+    'G': 6,
+    'H': 7,
+    'I': 8,
+    'J': 9,
+    'K': 10,
+    'L': 11,
+    'M': 12,
+    'N': 13,
+    'O': 14,
+    'P': 15,
+    'Q': 16,
+    'R': 17,
+    'S': 18,
+    'T': 19,
+    'U': 20,
+    'V': 21,
+    'W': 22,
+    'X': 23,
+    'Y': 24,
+    'Z': 25,
+}
+
 
 def shift_string(string: str, shift: int) -> str:
     """
@@ -70,10 +129,17 @@ def shift_string(string: str, shift: int) -> str:
     """
     shifted_string = str()
     for character in string:
-        if re.match('[a-z]', character):
-            character_as_integer: int = chr2int[character]
-            shifted_character_as_integer = (character_as_integer + shift) % 26
-            shifted_character = int2chr[shifted_character_as_integer]
+        if re.match('[A-Za-z]', character):
+            shifted_character = str()
+            if character.islower():
+                character_as_integer: int = chr2int[character]
+                shifted_character_as_integer = (character_as_integer + shift) % 26
+                shifted_character = int2chr[shifted_character_as_integer]
+            if character.isupper():
+                character_as_integer: int = cap2int[character]
+                shifted_character_as_integer = (character_as_integer + shift) % 26
+                shifted_character = int2cap[shifted_character_as_integer]
+
             # NOTE: Bad practice but nobody ever cared :D
             shifted_string += shifted_character
         else:
@@ -87,7 +153,7 @@ def main():
     parser.add_argument('-n', '--shift', required=True, type=int, help='Amount by which to shift')
     args = parser.parse_args()
 
-    print(shift_string(args.string.lower(), args.shift))
+    print(shift_string(args.string, args.shift))
 
 
 if __name__ == '__main__':
