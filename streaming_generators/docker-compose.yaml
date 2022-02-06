@@ -1,6 +1,22 @@
 version: "3.8"
 
 services:
+  # NOTE: This is NOT an industrial, production elasticsearch. It's a single node
+  # just to toy with.
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+    volumes:
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,z
+      - elasticsearch:/usr/share/elasticsearch/data:z
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      ES_JAVA_OPTS: "-Xmx2048m -Xms1024m"
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
+      # Use single node discovery in order to disable production mode and avoid bootstrap checks.
+      # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
+      discovery.type: single-node
   database:
     hostname: ${DATABASE_HOSTNAME}
     image: postgres:12
@@ -44,3 +60,4 @@ services:
 volumes:
   database-volume:
   rabbit-data:
+  elasticsearch:
