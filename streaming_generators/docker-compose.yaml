@@ -15,6 +15,7 @@ services:
     environment:
       ES_JAVA_OPTS: "-Xmx2048m -Xms1024m"
       ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
+      ELASTIC_USERNAME: ${ELASTIC_USERNAME}
       # Use single node discovery in order to disable production mode and avoid bootstrap checks.
       # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
       discovery.type: single-node
@@ -38,6 +39,7 @@ services:
       - DATABASE_HOST=${DATABASE_HOSTNAME}
       - ELASTIC_HOSTNAME=${ELASTIC_HOSTNAME}
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - ELASTIC_USERNAME=${ELASTIC_USERNAME}
       - MESSAGES_QUEUE=${MESSAGES_QUEUE}
       - PIPELINE_POSTGRES_PASSWORD=${PIPELINE_POSTGRES_PASSWORD}
       - PIPELINE_POSTGRES_USER=${PIPELINE_POSTGRES_USER}
