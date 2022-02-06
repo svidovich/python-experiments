@@ -1,4 +1,5 @@
 attrs==21.4.0
+elasticsearch==7.17.0
 pika==1.2.0
 psycopg2-binary==2.9.3
 SQLAlchemy==1.4.31
