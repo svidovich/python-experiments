@@ -11,13 +11,21 @@ from constants import PIKA_NULL_MESSAGE, POLL_INTERVAL
 
 
 @attr.s
-class RabbitConnectionParams(object):
-    exchange: str = attr.ib(kw_only=True, default=str())
-    queue_name: str = attr.ib(kw_only=True)
-    host: str = attr.ib(kw_only=True, default='localhost')
-    port: int = attr.ib(kw_only=True, default=5672)
-    username: str = attr.ib(kw_only=True, default=str())
-    password: str = attr.ib(kw_only=True, default=str())
+class MessengerConnectionParams(object):
+
+    @property
+    def asdict(self):
+        return attr.asdict(self)
+
+
+@attr.s(kw_only=True)
+class RabbitConnectionParams(MessengerConnectionParams):
+    exchange: str = attr.ib(factory=str)
+    queue_name: str = attr.ib()
+    host: str = attr.ib(default='localhost')
+    port: int = attr.ib(default=5672)
+    username: str = attr.ib(factory=str)
+    password: str = attr.ib(factory=str)
 
 
 class MessageAdapter(ABC):
