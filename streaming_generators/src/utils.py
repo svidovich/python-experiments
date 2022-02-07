@@ -9,7 +9,7 @@ generator_just_created = lambda g: inspect.getgeneratorstate(g) == inspect.GEN_C
 def coroutine(function: Generator):
     def prime(*args, **kwargs):
         coro = function(*args, **kwargs)
-        coro.next()
+        next(coro)
     return prime
 
 
