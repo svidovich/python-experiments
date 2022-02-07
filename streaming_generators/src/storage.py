@@ -80,3 +80,7 @@ class ElasticSearchStorageAdapter(StorageAdapterBase):
 
     def _connect(self, connection_params: ESConnectionParams) -> bool:
         return connection_params
+
+    def store_data(self, plugin_output: PluginOutput):
+        index_name: str = plugin_output.output_location
+        print(plugin_output.output)
