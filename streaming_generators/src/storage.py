@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 @attr.s(kw_only=True, auto_attribs=True)
 class ESConnectionParams(object):
     host: str = attr.ib()
-    username: str = attr.ib()
+    username: str = attr.ib(default='elastic')
     password: str = attr.ib()
-    port: str = attr.ib()
+    port: int = attr.ib(default=9200)
 
 
 @attr.s(kw_only=True, auto_attribs=True)
