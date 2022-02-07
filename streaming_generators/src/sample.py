@@ -58,6 +58,7 @@ def main():
 
     # This explicitly pulls the generators so that we can cleanly broadcast to them below
     storage_adapter_streaming_loops = [
+        message_printer(),
         pg_storage_adapter.stream_data_to_store(),
         es_storage_adapter.stream_data_to_store(),
     ]
