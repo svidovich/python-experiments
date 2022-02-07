@@ -10,6 +10,7 @@ def coroutine(function: Generator):
     def prime(*args, **kwargs):
         coro = function(*args, **kwargs)
         next(coro)
+        return coro
     return prime
 
 
