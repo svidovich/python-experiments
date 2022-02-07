@@ -36,11 +36,11 @@ def main():
     # TODO: This is a hack to essentially let me await rabbit being up.
     # There's a cool way to do this with docker-compose itself, but we
     # can think about that later.
-    db_connected = False
-    while not connected:
+    mq_connected = False
+    while not mq_connected:
         try:
             message_adapter = RabbitMessageAdapter(rabbit_connection_params)
-            connected = True
+            mq_connected = True
         except:
             time.sleep(1)
             continue
