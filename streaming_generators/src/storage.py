@@ -11,13 +11,21 @@ from plugin import PluginOutput
 logger = logging.getLogger(__name__)
 
 
-@attr.s
+@attr.s(kw_only=True, auto_attribs=True)
+class ESConnectionParams(object):
+    host: str = attr.ib()
+    username: str = attr.ib()
+    password: str = attr.ib()
+    port: str = attr.ib()
+
+
+@attr.s(kw_only=True, auto_attribs=True)
 class PGConnectionParams(object):
-    host: str = attr.ib(kw_only=True, default='localhost')
-    dbname: str = attr.ib(kw_only=True, default='postgres')
-    username: str = attr.ib(kw_only=True)
-    password: str = attr.ib(kw_only=True)
-    port: int = attr.ib(kw_only=True, default=5432)
+    host: str = attr.ib(default='localhost')
+    dbname: str = attr.ib(default='postgres')
+    username: str = attr.ib()
+    password: str = attr.ib()
+    port: int = attr.ib(default=5432)
 
 
 class StorageAdapterBase(ABC):
@@ -63,3 +71,12 @@ class PostgresStorageAdapter(StorageAdapterBase):
             self.connection.execute(statement)
         else:
             raise Exception(f"{table_name} is not a relation on database {self.engine.url.database}")
+
+
+class ElasticSearchStorageAdapter(StorageAdapterBase):
+
+    def __init__(self, connection_params: ESConnectionParams):
+        self._connect(connection_params)
+
+    def _connect(self, connection_params: ESConnectionParams) -> bool:
+        return connection_params
