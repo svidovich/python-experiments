@@ -150,6 +150,11 @@ class RabbitMessageAdapter(MessageAdapter):
             yield message
 
     def pipeline_messages(self, target: Generator) -> None:
+        if target is None:
+            # TODO Exceptions classes
+            raise Exception(
+                f'{type(self).__name__}: You must provide a destination generator for your messages; the encountered generator is null.'
+            )
         for message in self.receive_messages():
             # TODO / NOTE, FUTURE: We can probably act on the status & properties
             # so that we can refuse to send if the status was bad, etc. We should

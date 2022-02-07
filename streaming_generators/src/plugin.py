@@ -24,6 +24,10 @@ class ProcessingPlugin(ABC):
         raise NotImplemented
 
     def processing_loop(self, target: Generator):
+        if target is None:
+            # TODO Exceptions classes
+            raise Exception(
+                f'{type(self).__name__}: Your processing loop needs a target; the encountered generator is null.')
         while True:
             message = (yield)
             output: PluginOutput = self.process(message)
