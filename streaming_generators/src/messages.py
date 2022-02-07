@@ -101,6 +101,13 @@ class RabbitMessageAdapter(MessageAdapter):
         self.connection = pika.BlockingConnection(pika_parameters)
         self.channel = self.connection.channel()
 
+    def __exit__(self):
+        try:
+            self.channel.close()
+            self.connection.close()
+        finally:
+            pass
+
     def basic_json_deserialize(self, message: bytes) -> Union[bytes, dict, list]:
         """
         Takes a message received from RabbitMQ and tries to deserialize it as JSON.
