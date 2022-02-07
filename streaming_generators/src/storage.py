@@ -84,4 +84,5 @@ class ElasticSearchStorageAdapter(StorageAdapterBase):
 
     def store_data(self, plugin_output: PluginOutput):
         index_name: str = plugin_output.output_location
+        print(f'{type(self).__name__} data output:')
         print(plugin_output.output)
