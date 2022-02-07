@@ -3,6 +3,7 @@ import logging
 
 from abc import ABC, abstractmethod
 
+from elasticsearch import Elasticsearch
 from sqlalchemy import create_engine, MetaData, Table
 
 from plugin import PluginOutput
@@ -80,9 +81,19 @@ class ElasticSearchStorageAdapter(StorageAdapterBase):
         self._connect(connection_params)
 
     def _connect(self, connection_params: ESConnectionParams) -> bool:
-        return connection_params
+        self.connection = Elasticsearch(
+            {
+                'host': connection_params.host,
+                'port': connection_params.port,
+                'scheme': 'http',
+            },
+            http_auth=(connection_params.username, connection_params.password))
 
     def store_data(self, plugin_output: PluginOutput):
         index_name: str = plugin_output.output_location
-        print(f'{type(self).__name__} data output:')
-        print(plugin_output.output)
+        if self.connection.indices.exists(index=index_name):
+            print(f'{type(self).__name__}:')
+            print(plugin_output.output)
+        else:
+            print(f'{type(self).__name__}:')
+            print(f'No such index {index_name}.')
