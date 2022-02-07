@@ -1,5 +1,6 @@
 import attr
 import logging
+import time
 
 from abc import ABC, abstractmethod
 
@@ -12,8 +13,16 @@ from utils import coroutine
 logger = logging.getLogger(__name__)
 
 
+@attr.s
+class StorageConnectionParams(object):
+
+    @property
+    def asdict(self):
+        return attr.asdict(self)
+
+
 @attr.s(kw_only=True, auto_attribs=True)
-class ESConnectionParams(object):
+class ESConnectionParams(StorageConnectionParams):
     host: str = attr.ib()
     username: str = attr.ib(default='elastic')
     password: str = attr.ib()
@@ -21,7 +30,7 @@ class ESConnectionParams(object):
 
 
 @attr.s(kw_only=True, auto_attribs=True)
-class PGConnectionParams(object):
+class PGConnectionParams(StorageConnectionParams):
     host: str = attr.ib(default='localhost')
     dbname: str = attr.ib(default='postgres')
     username: str = attr.ib()
@@ -75,19 +84,39 @@ class PostgresStorageAdapter(StorageAdapterBase):
             raise Exception(f"{table_name} is not a relation on database {self.engine.url.database}")
 
 
+ES_CONNECTION_POLL_TIME = 1
+
+
 class ElasticSearchStorageAdapter(StorageAdapterBase):
 
     def __init__(self, connection_params: ESConnectionParams):
         self._connect(connection_params)
 
     def _connect(self, connection_params: ESConnectionParams) -> bool:
-        self.connection = Elasticsearch(
-            {
-                'host': connection_params.host,
-                'port': connection_params.port,
-                'scheme': 'http',
-            },
-            http_auth=(connection_params.username, connection_params.password))
+        print('-' * 50)
+        print(f'Attempting connection to ES with the following parameters:')
+        print(connection_params.asdict)
+        print('-' * 50)
+
+        connection_attempts = 0
+        max_connection_attempts = 30  # TODO Constantize
+        # TODO: What happens when we fail to connect entirely?
+        while connection_attempts < max_connection_attempts:
+            try:
+                self.connection = Elasticsearch(
+                    {
+                        'host': connection_params.host,
+                        'port': connection_params.port,
+                        'scheme': 'http',
+                    },
+                    http_auth=(connection_params.username, connection_params.password))
+                output = self.connection.cluster.health()
+                print(f'ES Cluster Health: {output}')  # TODO: Loggerfy
+            except:
+                connection_attempts += 1
+                print(f'Failed connecting to ElasticSearch. Trying again in {ES_CONNECTION_POLL_TIME} second(s).')
+                time.sleep(ES_CONNECTION_POLL_TIME)
+                continue
 
     def store_data(self, plugin_output: PluginOutput):
         index_name: str = plugin_output.output_location
