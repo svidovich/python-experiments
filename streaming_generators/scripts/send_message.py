@@ -9,9 +9,9 @@ def recv_callback(ch, method, properties, body):
 def main():
     parser = argparse.ArgumentParser()
     # yapf: disable
-    parser.add_argument('-q', '--queue-name', help='The name of the message queue')
-    parser.add_argument('-m', '--message', help='The message to send to the queue')
-    parser.add_argument('-d', '--debug', action='store_true', help='Debug logging switch')
+    parser.add_argument('-q', '--queue-name', required=True, help='The name of the message queue')
+    parser.add_argument('-m', '--message', required=True, help='The message to send to the queue')
+    parser.add_argument('-d', '--debug', required=False, action='store_true', help='Debug logging switch')
     args = parser.parse_args()
     queue_name: str = args.queue_name
     message: str = args.message
