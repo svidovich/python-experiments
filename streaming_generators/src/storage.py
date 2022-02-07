@@ -1,12 +1,12 @@
 import attr
 import logging
-import psycopg2
 
 from abc import ABC, abstractmethod
 
 from sqlalchemy import create_engine, MetaData, Table
 
 from plugin import PluginOutput
+from utils import coroutine
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +38,7 @@ class StorageAdapterBase(ABC):
     def store_data(self, data):
         raise NotImplemented()
 
+    @coroutine
     def stream_data_to_store(self) -> bool:
         while True:
             try:
