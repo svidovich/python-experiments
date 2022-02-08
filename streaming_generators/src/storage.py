@@ -120,9 +120,8 @@ class ElasticSearchStorageAdapter(StorageAdapterBase):
 
     def store_data(self, plugin_output: PluginOutput):
         index_name: str = plugin_output.output_location
-        if self.connection.indices.exists(index=index_name):
+        if not self.connection.indices.exists(index=index_name):
             print(f'{type(self).__name__}:')
-            print(plugin_output.output)
-        else:
-            print(f'{type(self).__name__}:')
-            print(f'No such index {index_name}.')
+            print(f'No such index {index_name}: creating a new one...')
+            self.connection.indices.create(index=index_name, ignore=400)
+        self.connection.index(index=index_name, body=plugin_output.output)
