@@ -20,7 +20,7 @@ services:
       # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
       discovery.type: single-node
     healthcheck:
-      test: ["CMD-SHELL", "curl --user elastic:password --silent --fail localhost:9200/_cluster/health || exit 1"]
+      test: ["CMD-SHELL", "curl --user ${ELASTIC_USERNAME}:${ELASTIC_PASSWORD} --silent --fail localhost:9200/_cluster/health || exit 1"]
       interval: 2s
       timeout: 1s
       retries: 15
