@@ -19,6 +19,13 @@ services:
       # Use single node discovery in order to disable production mode and avoid bootstrap checks.
       # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
       discovery.type: single-node
+    healthcheck:
+      test: ["CMD-SHELL", "curl --user elastic:password --silent --fail localhost:9200/_cluster/health || exit 1"]
+      interval: 2s
+      timeout: 1s
+      retries: 15
+      start_period: 15s
+      
   database:
     hostname: ${DATABASE_HOSTNAME}
     image: postgres:12
@@ -35,17 +42,22 @@ services:
     build:
       context: .
       dockerfile: python.Dockerfile
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
     environment:
       DATABASE_HOST: ${DATABASE_HOSTNAME}
       ELASTIC_HOSTNAME: ${ELASTIC_HOSTNAME}
       ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
       ELASTIC_USERNAME: ${ELASTIC_USERNAME}
+      ELASTIC_PORT: ${ELASTIC_PORT}
       MESSAGES_QUEUE: ${MESSAGES_QUEUE}
       PIPELINE_POSTGRES_PASSWORD: ${PIPELINE_POSTGRES_PASSWORD}
       PIPELINE_POSTGRES_USER: ${PIPELINE_POSTGRES_USER}
       POSTGRES_DB: ${POSTGRES_DB}
       PYTHONUNBUFFERED: 0
       RABBITMQ_HOST: ${MESSAGES_HOSTNAME}
+
     volumes:
       - type: bind
         source: ./src/
