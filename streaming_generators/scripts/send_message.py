@@ -1,9 +1,14 @@
 import argparse
 import pika
+from pika.adapters.blocking_connection import BlockingChannel
 
 
 def recv_callback(ch, method, properties, body):
     print(f'Received: {body}')
+
+
+def send_message(queue_name: str, message_body: str, channel: BlockingChannel):
+    channel.basic_publish(exchange='', routing_key=queue_name, body=message_body)
 
 
 def main():
@@ -18,8 +23,8 @@ def main():
 
     connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
     # yapf: enable
-    channel = connection.channel()
-    channel.basic_publish(exchange='', routing_key=queue_name, body=message)
+    channel: BlockingChannel = connection.channel()
+    send_message(queue_name=queue_name, message_body=message, channel=channel)
     if args.debug:
         print(f'Published message: {message}')
     connection.close()
