@@ -1,11 +1,16 @@
-from flask import Flask
+from flask import Flask, Response
 
 app = Flask(__name__)
 
 
+@app.route("/health")
+def healthcheck():
+    return Response('OK', status=200)
+
+
 @app.route("/")
 def sample():
-    return '{"sample":"data"}'
+    return Response('{"sample":"data"}', status=200)
 
 
 def main():
