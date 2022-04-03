@@ -21,12 +21,11 @@ services:
     environment:
       - API_HOST=${API_HOST}
       - API_PORT=${API_PORT}
+      - DEBUG=${DEBUG}
       - PYTHONUNBUFFERED=1
     volumes:
       - ./socketexperiment.py:/socketexperiment.py
-      - type: bind
-        source: ./bind/
-        target: /bind/
+
     entrypoint: ["python3", "-u", "/socketexperiment.py"]
     depends_on:
       simpleapi:
