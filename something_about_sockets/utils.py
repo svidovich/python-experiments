@@ -1,7 +1,19 @@
-class Response:
+import typing as T
+from dataclasses import asdict, dataclass
 
-    def __init__(*args, **kwargs):
-        pass
+
+@dataclass(frozen=True, kw_only=True)
+class Response:
+    protocol: str = None
+    status_code: T.Optional[int] = None
+    user_agent: str = None
+    response_date: str = None
+    header: str = None
+    response_content_length: int = 0
+    body: str = None
+
+    def asdict(self):
+        return asdict(self)
 
 
 def parse_response_bytes(response_bytes: bytes) -> dict:
