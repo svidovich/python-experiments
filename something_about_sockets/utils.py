@@ -4,25 +4,25 @@ from dataclasses import asdict, dataclass
 
 @dataclass(frozen=True, kw_only=True)
 class Response:
-    http_version: str = None
-    status_code: T.Optional[int] = None
-    server: str = None
+    body: str = None
     connection: str = None
+    content_length: int = 0
     content_type: str = None
     date: str = None
     header: str = None
-    content_length: int = 0
-    body: str = None
+    http_version: str = None
+    server: str = None
+    status_code: T.Optional[int] = None
 
     def asdict(self):
         return asdict(self)
 
 HTTP_PREFIX_MAP = {
-    'Server: ': 'server',
-    'Date: ': 'date',
-    'Content-Type: ': 'content_type',
+    'Connection: ': 'connection',
     'Content-Length': 'content_length',
-    'Connection: ': 'connection'
+    'Content-Type: ': 'content_type',
+    'Date: ': 'date',
+    'Server: ': 'server',
 }
 
 def parse_response_bytes(response_bytes: bytes) -> Response:
