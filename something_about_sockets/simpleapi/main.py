@@ -6,18 +6,18 @@ app = Flask(__name__)
 
 
 @app.route("/health")
-def healthcheck():
+def healthcheck() -> Response:
     return Response('OK', status=200)
 
 
 @app.route("/")
-def sample():
+def sample() -> Response:
     return Response('{"sample":"data"}', status=200)
 
 ephemeral_store = list()
 
 @app.route("/generator", methods=["GET", "POST", "PUT"])
-def id_endpoint():
+def id_endpoint() -> Response:
     id = request.args.get('id', None)
     if request.method == "GET":
         if not id and len(ephemeral_store) > 0:
