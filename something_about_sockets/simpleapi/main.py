@@ -1,3 +1,4 @@
+import random
 import uuid
 from flask import Flask, Response, request
 
@@ -13,21 +14,29 @@ def healthcheck():
 def sample():
     return Response('{"sample":"data"}', status=200)
 
-ephemeral_store = set()
+ephemeral_store = list()
 
-@app.route("/idgen", methods=["GET", "POST", "PUT"])
+@app.route("/generator", methods=["GET", "POST", "PUT"])
 def id_endpoint():
     id = request.args.get('id', None)
     if request.method == "GET":
-        if id in ephemeral_store:
+        if not id and len(ephemeral_store) > 0:
+            return Response(random.choice(ephemeral_store), status=200)
+        elif not id and not len(ephemeral_store):
+            return Response("No ID supplied.", status=400)
+        elif id in ephemeral_store:
             return Response(f"ID {id} found!\n", status=200)
         else:
             return Response(f"ID {id} not found!\n", status=404)
     elif request.method == "POST":
         return Response(f'{uuid.uuid4()}', status=200)
     elif request.method == "PUT":
-        ephemeral_store.add(id)
-        return Response("OK", status=200)
+        try:
+            uuid.UUID(id)
+            ephemeral_store.append(id)
+            return Response("OK", status=200)
+        except ValueError as e:
+            return Response(f"Couldn't add ID {id}: {e}\n", status=422)
     else:
         return Response("Not Implemented", status=501)
 
