@@ -24,6 +24,8 @@ services:
       - DEBUG=${DEBUG}
       - PYTHONUNBUFFERED=1
     volumes:
+      - ./__init__.py:/__init__.py
+      - ./timer.py:/timer.py
       - ./socketexperiment.py:/socketexperiment.py
 
     entrypoint: ["python3", "-u", "/socketexperiment.py"]

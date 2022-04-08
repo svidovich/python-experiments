@@ -1,8 +1,10 @@
 import argparse
 import logging
 import os
+import typing as T
 from select import select
 from socket import socket, AF_INET, SOCK_STREAM, SHUT_RDWR
+from timer import Timer
 from urllib import response
 
 def args_from_env() -> dict:
@@ -14,6 +16,10 @@ def args_from_env() -> dict:
 RECV_SIZE = 1024
 MAX_RECV_SIZE = 1024 * 1024 * 8
 SOCK_CONNECTION_TIMEOUT = float(10)
+# After we read from the socket for the first time, we should go back to the socket
+# and check to see if there's any additional data. This variable controls how long
+# we wait for that data to show up before we straight up bail out.
+SOCKET_RECHECK_TIMEOUT = float(0.0)
 DEBUG_ENABLED = os.environ.get("DEBUG", False)
 logging.basicConfig(level=logging.DEBUG if DEBUG_ENABLED else logging.INFO)
 logger = logging.getLogger(__name__)
@@ -45,19 +51,22 @@ def get(host: str, port: int, path: str) -> bytes:
         read_sockets, _, _ = select([inet_socket], list(), list(), SOCK_CONNECTION_TIMEOUT)
         while True:
             if read_sockets:
-                response_bytes += inet_socket.recv(RECV_SIZE)
+                with Timer("Receiving bytes from socket"):
+                    response_bytes += inet_socket.recv(RECV_SIZE)
                 logger.debug(f"Response bytes increases size to {len(response_bytes)}")
                 logger.debug(f"Response bytes: {response_bytes}")
                 # Wait until our socket has something to read manually. If we don't find
                 # something to read before SOCK_CONNECTION_TIMEOUT, we'll get an empty list
                 # for 'read_sockets', causing us to bail out.
-                read_sockets, _, _ = select([inet_socket], list(), list(), SOCK_CONNECTION_TIMEOUT)
+                read_sockets: T.List[T.Optional[socket]]
+                with Timer("Checking for additional data from endpoint"):
+                    read_sockets, _, _ = select([inet_socket], list(), list(), SOCKET_RECHECK_TIMEOUT)
             else:
                 break
 
-        logger.debug('Shutting down connection...')
-        inet_socket.shutdown(SHUT_RDWR)  # send FIN to peer
-        inet_socket.close()  # deallocate socket
+        with Timer('Shutting down connection...'):
+            inet_socket.shutdown(SHUT_RDWR)  # send FIN to peer
+            inet_socket.close()  # deallocate socket
 
         return response_bytes
 
