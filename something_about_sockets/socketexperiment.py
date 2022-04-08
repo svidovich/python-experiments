@@ -1,11 +1,15 @@
+import argparse
 import logging
 import os
 from select import select
 from socket import socket, AF_INET, SOCK_STREAM, SHUT_RDWR
 from urllib import response
 
-API_HOST = os.environ["API_HOST"]
-API_PORT = int(os.environ["API_PORT"])
+def args_from_env() -> dict:
+    return {
+        'API_HOST': os.environ.get("API_HOST"),
+        'API_PORT': os.environ.get("API_PORT"),
+    }
 
 RECV_SIZE = 1024
 MAX_RECV_SIZE = 1024 * 1024 * 8
@@ -59,11 +63,26 @@ def get(host: str, port: int, path: str) -> bytes:
 
 
 def main():
-    logger.debug('pre-request')
-    api_path = '/'
-    response: bytes = get(API_HOST, API_PORT, api_path)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-h', '--host', required=False, help='Host to hit with socket connection. Alternatively, set the API_HOST environment variable.')
+    parser.add_argument('-p', '--port', required=False, type=int, help='Port on host. Alternatively, set the API_PORT environment variable.')
+    parser.add_argument('-e', '--endpoint', required=False, defualt='/', help='The endpoint at the host to hit. Defaults to /.')
+    args = parser.parse_args()
+
+    api_host = args.host
+    api_port = args.port
+    if not any(api_host, api_port):
+        env_args: dict = args_from_env()
+        if not all(value for value in env_args.values()):
+            raise RuntimeError("You need to provide host and port, either through environment or as arguments to the script.")
+        
+        api_host = env_args['API_HOST']
+        api_port = env_args['API_PORT']
+
+    api_path = args.endpoint
+    response: bytes = get(api_host, api_port, api_path)
     logger.debug(response)
-    logger.debug('post-request')
+
 
 
 if __name__ == '__main__':
