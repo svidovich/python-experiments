@@ -29,15 +29,26 @@ def generate_socket() -> socket:
     return socket(AF_INET, SOCK_STREAM)
 
 
-def get(host: str, port: int, path: str) -> bytes:
+def socket_connect(inet_socket: socket, host: str, port: int) -> socket:
+    with Timer(f'Starting socket connection to {host}:{port}'):
+        connection_tuple = (host, port)
+
+        logger.debug('Generating socket...')
+        inet_socket = generate_socket()
+        logger.debug('Getting connection...')
+        inet_socket.connect(connection_tuple)
+        return inet_socket
+
+def socket_disconnect(inet_socket: socket) -> None:
+    with Timer('Shutting down connection...'):
+        inet_socket.shutdown(SHUT_RDWR)  # send FIN to peer
+        inet_socket.close()  # deallocate socket
+
+
+def get(inet_socket: socket, path: str) -> bytes:
     request_bytes: bytes = f"GET {path} HTTP/1.1\r\n\r\n".encode()
     response_bytes = bytes()
-    connection_tuple = (host, port)
 
-    logger.debug('Generating socket...')
-    inet_socket = generate_socket()
-    logger.debug('Getting connection...')
-    inet_socket.connect(connection_tuple)
     _, write_sockets, _ = select(list(), [inet_socket], list(), SOCK_CONNECTION_TIMEOUT)
 
     if write_sockets:
@@ -64,10 +75,6 @@ def get(host: str, port: int, path: str) -> bytes:
             else:
                 break
 
-        with Timer('Shutting down connection...'):
-            inet_socket.shutdown(SHUT_RDWR)  # send FIN to peer
-            inet_socket.close()  # deallocate socket
-
         return response_bytes
 
 
@@ -91,7 +98,9 @@ def main():
     api_port = int(api_port)
 
     api_path = args.endpoint
-    response: bytes = get(api_host, api_port, api_path)
+    inet_socket: socket = socket_connect(generate_socket(), api_host, api_port)
+    response: bytes = get(inet_socket, api_path)
+    socket_disconnect(inet_socket=inet_socket)
     logger.debug(response)
 
 
