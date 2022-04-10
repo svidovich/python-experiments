@@ -16,7 +16,7 @@ def args_from_env() -> dict:
 REQUEST_UA = "~socket experiment machine~"
 RECV_SIZE = 1024
 MAX_RECV_SIZE = 1024 * 1024 * 8
-SOCK_CONNECTION_TIMEOUT = float(10)
+SOCK_CONNECTION_TIMEOUT = float(1)
 # After we read from the socket for the first time, we should go back to the socket
 # and check to see if there's any additional data. This variable controls how long
 # we wait for that data to show up before we straight up bail out.
@@ -53,14 +53,15 @@ def get(inet_socket: socket, path: str) -> bytes:
     _, write_sockets, _ = select(list(), [inet_socket], list(), SOCK_CONNECTION_TIMEOUT)
 
     if write_sockets:
-        logger.debug('Making request...')
-        inet_socket.send(request_bytes)
+        with Timer("Sending data"):
+            inet_socket.send(request_bytes)
 
         # Now that we've sent data, we want to unblock our socket. That way, when we recv(n),
         # we don't just hang open until we receive something: we will bail off.
         inet_socket.setblocking(False)
         # Wait until our socket has something available to read manually.
-        read_sockets, _, _ = select([inet_socket], list(), list(), SOCK_CONNECTION_TIMEOUT)
+        with Timer(f"Detecting response; timeout {SOCK_CONNECTION_TIMEOUT}"):
+            read_sockets, _, _ = select([inet_socket], list(), list(), SOCK_CONNECTION_TIMEOUT)
         while True:
             if read_sockets:
                 with Timer("Receiving bytes from socket"):
@@ -84,6 +85,7 @@ def post(inet_socket: socket, path: str, content: bytes, content_type: str = Non
     request_bytes += f"Content-Length: {len(content)}\r\n"
     if content_type:
         request_bytes += f"Content-Type: {content_type}\r\n"
+    request_bytes += "\r\n"
     request_bytes: bytes = request_bytes.encode()
     request_bytes += content
     response_bytes = bytes()
@@ -91,11 +93,13 @@ def post(inet_socket: socket, path: str, content: bytes, content_type: str = Non
     _, write_sockets, _ = select(list(), [inet_socket], list(), SOCK_CONNECTION_TIMEOUT)
 
     if write_sockets:
-        logger.debug('Making request...')
-        inet_socket.send(request_bytes)
+        with Timer(f"Sending data"):
+            inet_socket.send(request_bytes)
 
         inet_socket.setblocking(False)
-        read_sockets, _, _ = select([inet_socket], list(), list(), SOCK_CONNECTION_TIMEOUT)
+
+        with Timer(f"Detecting response; timeout {SOCK_CONNECTION_TIMEOUT}"):
+            read_sockets, _, _ = select([inet_socket], list(), list(), SOCK_CONNECTION_TIMEOUT)
         while True:
             if read_sockets:
                 with Timer("Receiving bytes from socket"):
