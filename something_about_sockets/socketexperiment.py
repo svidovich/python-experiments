@@ -7,6 +7,9 @@ from socket import socket, AF_INET, SOCK_STREAM, SHUT_RDWR
 from timer import Timer
 from urllib import response
 
+from utils import Response as CustomResponse
+from utils import parse_response_bytes
+
 def args_from_env() -> dict:
     return {
         'API_HOST': os.environ.get("API_HOST"),
@@ -142,7 +145,8 @@ def main():
         sample_post_content = bytes()
         response: bytes = post(inet_socket, api_path, sample_post_content)
     socket_disconnect(inet_socket=inet_socket)
-    logger.debug(response)
+    response: CustomResponse = parse_response_bytes(response)
+    print(response.asdict())
 
 
 
