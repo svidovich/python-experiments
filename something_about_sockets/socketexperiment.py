@@ -34,7 +34,7 @@ def generate_socket() -> socket:
 
 
 def socket_connect(inet_socket: socket, host: str, port: int) -> socket:
-    with Timer(f'Starting socket connection to {host}:{port}'):
+    with Timer(f'Starting socket connection to {host}:{port}', debug=DEBUG_ENABLED):
         connection_tuple = (host, port)
 
         logger.debug('Generating socket...')
@@ -44,7 +44,7 @@ def socket_connect(inet_socket: socket, host: str, port: int) -> socket:
         return inet_socket
 
 def socket_disconnect(inet_socket: socket) -> None:
-    with Timer('Shutting down connection...'):
+    with Timer('Shutting down connection...', debug=DEBUG_ENABLED):
         inet_socket.shutdown(SHUT_RDWR)  # send FIN to peer
         inet_socket.close()  # deallocate socket
 
@@ -56,18 +56,18 @@ def get(inet_socket: socket, path: str) -> bytes:
     _, write_sockets, _ = select(list(), [inet_socket], list(), SOCK_CONNECTION_TIMEOUT)
 
     if write_sockets:
-        with Timer("Sending data"):
+        with Timer("Sending data", debug=DEBUG_ENABLED):
             inet_socket.send(request_bytes)
 
         # Now that we've sent data, we want to unblock our socket. That way, when we recv(n),
         # we don't just hang open until we receive something: we will bail off.
         inet_socket.setblocking(False)
         # Wait until our socket has something available to read manually.
-        with Timer(f"Detecting response; timeout {SOCK_CONNECTION_TIMEOUT}"):
+        with Timer(f"Detecting response; timeout {SOCK_CONNECTION_TIMEOUT}", debug=DEBUG_ENABLED):
             read_sockets, _, _ = select([inet_socket], list(), list(), SOCK_CONNECTION_TIMEOUT)
         while True:
             if read_sockets:
-                with Timer("Receiving bytes from socket"):
+                with Timer("Receiving bytes from socket", debug=DEBUG_ENABLED):
                     response_bytes += inet_socket.recv(RECV_SIZE)
                 logger.debug(f"Response bytes increases size to {len(response_bytes)}")
                 logger.debug(f"Response bytes: {response_bytes}")
@@ -75,7 +75,7 @@ def get(inet_socket: socket, path: str) -> bytes:
                 # something to read before SOCK_CONNECTION_TIMEOUT, we'll get an empty list
                 # for 'read_sockets', causing us to bail out.
                 read_sockets: T.List[T.Optional[socket]]
-                with Timer("Checking for additional data from endpoint"):
+                with Timer("Checking for additional data from endpoint", debug=DEBUG_ENABLED):
                     read_sockets, _, _ = select([inet_socket], list(), list(), SOCKET_RECHECK_TIMEOUT)
             else:
                 break
@@ -96,21 +96,21 @@ def post(inet_socket: socket, path: str, content: bytes, content_type: str = Non
     _, write_sockets, _ = select(list(), [inet_socket], list(), SOCK_CONNECTION_TIMEOUT)
 
     if write_sockets:
-        with Timer(f"Sending data"):
+        with Timer(f"Sending data", debug=DEBUG_ENABLED):
             inet_socket.send(request_bytes)
 
         inet_socket.setblocking(False)
 
-        with Timer(f"Detecting response; timeout {SOCK_CONNECTION_TIMEOUT}"):
+        with Timer(f"Detecting response; timeout {SOCK_CONNECTION_TIMEOUT}", debug=DEBUG_ENABLED):
             read_sockets, _, _ = select([inet_socket], list(), list(), SOCK_CONNECTION_TIMEOUT)
         while True:
             if read_sockets:
-                with Timer("Receiving bytes from socket"):
+                with Timer("Receiving bytes from socket", debug=DEBUG_ENABLED):
                     response_bytes += inet_socket.recv(RECV_SIZE)
                 logger.debug(f"Response bytes increases size to {len(response_bytes)}")
                 logger.debug(f"Response bytes: {response_bytes}")
                 read_sockets: T.List[T.Optional[socket]]
-                with Timer("Checking for additional data from endpoint"):
+                with Timer("Checking for additional data from endpoint", debug=DEBUG_ENABLED):
                     read_sockets, _, _ = select([inet_socket], list(), list(), SOCKET_RECHECK_TIMEOUT)
             else:
                 break

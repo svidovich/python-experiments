@@ -1,8 +1,9 @@
 import time
 
 class Timer:
-    def __init__(self, message: str):
+    def __init__(self, message: str, debug: bool=False):
         self.message = message
+        self.debug = debug
 
     def __enter__(self):
         self.start = time.time()
@@ -14,4 +15,5 @@ class Timer:
     def log_message(self):
         self.finish = time.time()
         duration = self.finish - self.start
-        print(f"-> {self.message}: Ran for {duration:.2f}s")
+        if self.debug:
+            print(f"-> {self.message}: Ran for {duration:.2f}s")
