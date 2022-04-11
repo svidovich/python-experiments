@@ -146,7 +146,7 @@ def main():
         response: bytes = post(inet_socket, api_path, sample_post_content)
     socket_disconnect(inet_socket=inet_socket)
     response: CustomResponse = parse_response_bytes(response)
-    print(response.asdict())
+    print(response.asJSON())
 
 
 

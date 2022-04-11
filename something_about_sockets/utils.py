@@ -1,3 +1,4 @@
+import json
 import typing as T
 from dataclasses import asdict, dataclass
 
@@ -13,8 +14,11 @@ class Response:
     server: str = None
     status_code: T.Optional[int] = None
 
-    def asdict(self):
+    def asdict(self) -> dict:
         return asdict(self)
+    
+    def asJSON(self) -> str:
+        return json.dumps(self.asdict())
     
     def __post_init__(self):
         self.status_code = int(self.status_code) if self.status_code else None
