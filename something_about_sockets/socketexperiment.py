@@ -88,24 +88,23 @@ def socket_rw(inet_socket: socket, request_bytes: bytes) -> bytes:
 def http_method(inet_socket: socket, path: str, content: bytes, method_name: str, content_type: str = None) -> bytes:
     request_bytes: str = f"{method_name} {path} HTTP/1.1\r\n"
     request_bytes += f"User-Agent: {REQUEST_UA}\r\n"
-    request_bytes += f"Content-Length: {len(content)}\r\n"
+    request_bytes += f"Content-Length: {len(content) if content else 0}\r\n"
     if content_type:
         request_bytes += f"Content-Type: {content_type}\r\n"
     request_bytes += "\r\n"
     request_bytes: bytes = request_bytes.encode()
-    request_bytes += content
+    request_bytes += content or bytes()
     response_bytes = socket_rw(inet_socket=inet_socket, request_bytes=request_bytes)
     return response_bytes
 
 
 def post(inet_socket: socket, path: str, content: bytes, content_type: str = None) -> bytes:
-    return http_method(inet_socket, path, content, 'POST', content_type)
+    return http_method(inet_socket=inet_socket, path=path, content=content, method_name='POST', content_type=content_type)
 
 
 def get(inet_socket: socket, path: str) -> bytes:
-    request_bytes: bytes = f"GET {path} HTTP/1.1\r\n\r\n".encode()
-    response_bytes = socket_rw(inet_socket=inet_socket, request_bytes=request_bytes)
-    return response_bytes
+    return http_method(inet_socket=inet_socket, path=path, content=None, method_name='GET', content_type=None)
+
 
 
 def main():
