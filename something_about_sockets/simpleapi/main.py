@@ -35,8 +35,8 @@ def id_endpoint() -> Response:
             uuid.UUID(id)
             ephemeral_store.append(id)
             return Response("OK", status=200)
-        except ValueError as e:
-            return Response(f"Couldn't add ID {id}: {e}\n", status=422)
+        except (TypeError, ValueError) as e:
+            return Response(f"Couldn't add ID {id}: {e}; {request.__dir__()}", status=422)
     else:
         return Response("Not Implemented", status=501)
 

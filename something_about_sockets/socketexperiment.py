@@ -1,11 +1,12 @@
 import argparse
+import json
 import logging
 import os
 import typing as T
+import uuid
 from select import select
 from socket import socket, AF_INET, SOCK_STREAM, SHUT_RDWR
 from timer import Timer
-from urllib import response
 
 from utils import Response as CustomResponse
 from utils import parse_response_bytes
@@ -82,15 +83,12 @@ def socket_rw(inet_socket: socket, request_bytes: bytes) -> bytes:
         return response_bytes
 
 
-
-
-
 def http_method(inet_socket: socket, path: str, content: bytes, method_name: str, content_type: str = None) -> bytes:
     request_bytes: str = f"{method_name} {path} HTTP/1.1\r\n"
     request_bytes += f"User-Agent: {REQUEST_UA}\r\n"
-    request_bytes += f"Content-Length: {len(content) if content else 0}\r\n"
     if content_type:
         request_bytes += f"Content-Type: {content_type}\r\n"
+    request_bytes += f"Content-Length: {len(content) if content else 0}\r\n"
     request_bytes += "\r\n"
     request_bytes: bytes = request_bytes.encode()
     request_bytes += content or bytes()
@@ -106,13 +104,16 @@ def get(inet_socket: socket, path: str) -> bytes:
     return http_method(inet_socket=inet_socket, path=path, content=None, method_name='GET', content_type=None)
 
 
+def put(inet_socket: socket, path: str, content: bytes, content_type: str = None) -> bytes:
+    return http_method(inet_socket=inet_socket, path=path, content=content, method_name='PUT', content_type=content_type)
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--host', required=False, help='Host to hit with socket connection. Alternatively, set the API_HOST environment variable.')
     parser.add_argument('-p', '--port', required=False, type=int, help='Port on host. Alternatively, set the API_PORT environment variable.')
     parser.add_argument('-e', '--endpoint', required=False, default='/', help='The endpoint at the host to hit. Defaults to /.')
-    parser.add_argument('-x', '--method', required=False, default='GET', choices=['GET', 'POST'], help='HTTP Method to use')
+    parser.add_argument('-x', '--method', required=False, default='GET', choices=['GET', 'POST', 'PUT'], help='HTTP Method to use')
     args = parser.parse_args()
 
     api_host = args.host
@@ -131,9 +132,14 @@ def main():
     inet_socket: socket = socket_connect(generate_socket(), api_host, api_port)
     if args.method == 'GET':
         response: bytes = get(inet_socket, api_path)
-    if args.method == 'POST':
+    elif args.method == 'POST':
         sample_post_content = bytes()
         response: bytes = post(inet_socket, api_path, sample_post_content)
+    elif args.method == 'PUT':
+        sample_put_content = bytes(f'id={uuid.uuid4()}'.encode())
+        response: bytes = put(inet_socket, api_path, sample_put_content, content_type='application/x-www-form-urlencoded')
+    else:
+        raise NotImplemented(f"Method {args.method} is not implemented.")
     socket_disconnect(inet_socket=inet_socket)
     response: CustomResponse = parse_response_bytes(response)
     print(response.asJSON())
