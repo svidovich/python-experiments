@@ -136,7 +136,7 @@ def main():
         sample_post_content = bytes()
         response: bytes = post(inet_socket, api_path, sample_post_content)
     elif args.method == 'PUT':
-        sample_put_content = bytes(f'id={uuid.uuid4()}'.encode())
+        sample_put_content = f'\r\nid={uuid.uuid4()}'.encode()
         response: bytes = put(inet_socket, api_path, sample_put_content, content_type='application/x-www-form-urlencoded')
     else:
         raise NotImplemented(f"Method {args.method} is not implemented.")
