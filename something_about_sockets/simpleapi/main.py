@@ -18,7 +18,7 @@ ephemeral_store = list()
 
 @app.route("/generator", methods=["GET", "POST", "PUT"])
 def id_endpoint() -> Response:
-    id = request.args.get('id', None)
+    id = request.json.get('id', None)
     if request.method == "GET":
         if not id and len(ephemeral_store) > 0:
             return Response(random.choice(ephemeral_store), status=200)
@@ -36,7 +36,7 @@ def id_endpoint() -> Response:
             ephemeral_store.append(id)
             return Response("OK", status=200)
         except (TypeError, ValueError) as e:
-            return Response(f"Couldn't add ID {id}: {e}; ---{request.headers}", status=422)
+            return Response(f"Couldn't add ID {id}: {e}; ---{request.headers} ---{request.data or request.json}", status=422)
     else:
         return Response("Not Implemented", status=501)
 

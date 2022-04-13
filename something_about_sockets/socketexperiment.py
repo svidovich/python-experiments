@@ -91,8 +91,8 @@ def http_method(inet_socket: socket, path: str, content: bytes, method_name: str
         request_bytes += f"Content-Type: {content_type}\r\n"
     request_bytes += f"Content-Length: {len(content) if content else 0}\r\n"
     request_bytes: bytes = request_bytes.encode()
+    request_bytes += "\r\n".encode()
     request_bytes += content or bytes()
-    request_bytes += "\r\n\r\n".encode()
     response_bytes = socket_rw(inet_socket=inet_socket, request_bytes=request_bytes)
     return response_bytes
 
@@ -137,8 +137,8 @@ def main():
         sample_post_content = bytes()
         response: bytes = post(inet_socket, api_path, sample_post_content)
     elif args.method == 'PUT':
-        sample_put_content = f'id={uuid.uuid4()}'.encode()
-        response: bytes = put(inet_socket, api_path, sample_put_content) #, content_type='application/x-www-form-urlencoded')
+        sample_put_content = json.dumps({'id': str(uuid.uuid4())}).encode()
+        response: bytes = put(inet_socket, api_path, sample_put_content, content_type='application/json')
     else:
         raise NotImplemented(f"Method {args.method} is not implemented.")
     socket_disconnect(inet_socket=inet_socket)
