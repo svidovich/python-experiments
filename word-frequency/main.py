@@ -4,6 +4,35 @@ import requests
 from collections import Counter
 from lxml import html
 
+exclusions = [
+    'a',
+    'an',
+    'and',
+    'are',
+    'as',
+    'be',
+    'by',
+    'can',
+    'do',
+    'for',
+    'if',
+    'in',
+    'is',
+    'it',
+    'not',
+    'of',
+    'on',
+    'or',
+    'that',
+    'the',
+    'this',
+    'to',
+    'will',
+    'with',
+    'you',
+    'your',
+]
+
 def get_page_body(url: str) -> str:
     response = requests.get(url)
     parsed_content = html.fromstring(response.content)
@@ -13,13 +42,14 @@ def get_page_body(url: str) -> str:
 def count_words(page_text: str) -> Counter:
     output = Counter()
     split_text = page_text.split(' ')
-    split_text = list(filter(None, split_text))
+    split_text = [word.lower() for word in list(filter(None, split_text))]
     # This is better w/ defaultdict but im 2 lazy 2 remembr how
     for word in split_text:
-        if word not in output:
-            output[word] = 0
-        else:
-            output[word] += 1
+        if word not in exclusions and word.isalpha():
+            if word not in output:
+                output[word] = 0
+            else:
+                output[word] += 1
     return output
 
 def main():
