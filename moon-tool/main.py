@@ -1,6 +1,7 @@
 import argparse
 import base64
 import datetime
+import jmespath
 import json
 import os
 import requests
@@ -28,25 +29,29 @@ def main():
     current_datetime = datetime.datetime.now()
     today_as_date = current_datetime.strftime('%Y-%m-%d')
     current_time = current_datetime.strftime('%H:%M:%S')
+
+    default_parameters = {
+        'latitude': DEFAULT_LATITUDE,
+        'longitude': DEFAULT_LONGITUDE,
+        'from_date': today_as_date,
+        'to_date': today_as_date,
+        'time': current_time,
+        'elevation': 0,
+    }
+
     if body_to_check:
-        uri_body_position = f'{POSITIONS_ENDPOINT}{body_to_check}?latitude={args.lat}&longitude={args.long}&from_date={today_as_date}&to_date={today_as_date}&time={current_time}&elevation=0'
-        body_position = requests.get(uri_body_position, headers={'Authorization': f'Basic {auth}'}).json()
+        uri_body_position = f'{POSITIONS_ENDPOINT}{body_to_check}'
+        body_position = requests.get(uri_body_position, headers={'Authorization': f'Basic {auth}'}, params=default_parameters).json()
         print(json.dumps(body_position))
     elif args.moon_phase:
         body_to_check = 'moon'
-        parameters = {
-            'latitude': DEFAULT_LATITUDE,
-            'longitude': DEFAULT_LONGITUDE,
-            'from_date': today_as_date,
-            'to_date': today_as_date,
-            'time': current_time,
-            'elevation': 0,
-        }
+     
         uri_moon_position = f'{POSITIONS_ENDPOINT}{body_to_check}'
-        moon_data = requests.get(uri_moon_position, headers={'Authorization': f'Basic {auth}'}, params=parameters).json()
-        # TODO: JMESPATH
-        moon_dictionary = moon_data.get('data', dict()).get('table', dict()).get('rows', [dict()])
-        moon_phase = moon_dictionary[0].get('cells', [dict()])[0].get('extraInfo', dict()).get('phase', dict()).get('string')
+        moon_data = requests.get(uri_moon_position, headers={'Authorization': f'Basic {auth}'}, params=default_parameters).json()
+
+        json_path_expression = 'data.table.rows[0].cells[0].extraInfo.phase.string'
+        moon_phase = jmespath.search(json_path_expression, moon_data)
+
         print(f'The current moon phase is {moon_phase}.')
 
 
