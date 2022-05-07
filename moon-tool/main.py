@@ -34,8 +34,16 @@ def main():
         print(json.dumps(body_position))
     elif args.moon_phase:
         body_to_check = 'moon'
-        uri_moon_position = f'{POSITIONS_ENDPOINT}{body_to_check}?latitude={DEFAULT_LATITUDE}&longitude={DEFAULT_LONGITUDE}&from_date={today_as_date}&to_date={today_as_date}&time={current_time}&elevation=0'
-        moon_data = requests.get(uri_moon_position, headers={'Authorization': f'Basic {auth}'}).json()
+        parameters = {
+            'latitude': DEFAULT_LATITUDE,
+            'longitude': DEFAULT_LONGITUDE,
+            'from_date': today_as_date,
+            'to_date': today_as_date,
+            'time': current_time,
+            'elevation': 0,
+        }
+        uri_moon_position = f'{POSITIONS_ENDPOINT}{body_to_check}'
+        moon_data = requests.get(uri_moon_position, headers={'Authorization': f'Basic {auth}'}, params=parameters).json()
         # TODO: JMESPATH
         moon_dictionary = moon_data.get('data', dict()).get('table', dict()).get('rows', [dict()])
         moon_phase = moon_dictionary[0].get('cells', [dict()])[0].get('extraInfo', dict()).get('phase', dict()).get('string')
