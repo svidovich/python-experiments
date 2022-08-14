@@ -77,6 +77,7 @@ class Player(Sprite):
 
         self.rectangle.midbottom = self.position
 
+
 class Platform(Sprite):
     PLATFORM_DEFAULT_FILL = (255, 0, 0)
     PLATFORM_DEFAULT_SIZE = (WIDTH // 4, 20)
@@ -107,6 +108,9 @@ def main():
     all_sprites.add([platform_1, player_1])
 
     while True:
+        pygame.display.update()
+        player_1.move()
+
         event: Event
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -114,15 +118,13 @@ def main():
                 sys.exit(0)
             display_surface.fill(BLACK)
         
+
         entity: Sprite
         for entity in all_sprites:
-            import pdb
+            # import pdb
             # pdb.set_trace()
             display_surface.blit(source=entity.surface, dest=entity.rectangle)
         
-        player_1.move()
-
-        pygame.display.update()
         game_clock.tick(FPS)
 
 
