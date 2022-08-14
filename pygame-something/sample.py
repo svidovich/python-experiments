@@ -3,7 +3,7 @@ import sys
 from typing import Final, Tuple
 
 import pygame
-from pygame import Surface
+from pygame import Rect, Surface
 from pygame.event import Event
 from pygame.math import Vector2
 from pygame.sprite import Group, Sprite
@@ -25,10 +25,10 @@ class Player(Sprite):
     PLAYER_DEFAULT_SIZE = (30, 30)
     def __init__(self, size: Tuple[int]=PLAYER_DEFAULT_SIZE, fill_color: Tuple[int]=PLAYER_DEFAULT_FILL) -> None:
         super().__init__()
-        self.surf = Surface(size=size)
-        self.surf.fill(color=fill_color)
+        self.surface = Surface(size=size)
+        self.surface.fill(color=fill_color)
         # The center kwarg... defines where it starts out?
-        self.rect = self.surf.get_rect(center=(10, HEIGHT - 30))
+        self.rectangle: Rect = self.surface.get_rect(center=(10, HEIGHT - 30))
 
 
 class Platform(Sprite):
@@ -36,9 +36,9 @@ class Platform(Sprite):
     PLATFORM_DEFAULT_SIZE = (WIDTH // 4, 20)
     def __init__(self, size: Tuple[int]=PLATFORM_DEFAULT_SIZE, fill_color: Tuple[int]=PLATFORM_DEFAULT_FILL, initial_postition: Tuple[int]=ORIGIN):
         super().__init__()
-        self.surf = Surface(size=size)
-        self.surf.fill(color=fill_color)
-        self.rect = self.surf.get_rect(center=(initial_postition))
+        self.surface = Surface(size=size)
+        self.surface.fill(color=fill_color)
+        self.rectangle: Rect = self.surface.get_rect(center=(initial_postition))
 
 
 def main():
@@ -65,7 +65,7 @@ def main():
         
         entity: Sprite
         for entity in all_sprites:
-            display_surface.blit(source=entity.surf, dest=entity.rect)
+            display_surface.blit(source=entity.surface, dest=entity.rectangle)
         
         pygame.display.update()
         game_clock.tick(FPS)
