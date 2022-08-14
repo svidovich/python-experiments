@@ -29,7 +29,6 @@ class Player(Sprite):
         super().__init__()
         self.surface = Surface(size=size)
         self.surface.fill(color=fill_color)
-        # The center kwarg... defines where it starts out?
         self.rectangle: Rect = self.surface.get_rect()
 
         # Vector2 takes individual ordinates for its argument OR
@@ -37,6 +36,9 @@ class Player(Sprite):
         self.position = Vector2((10, HEIGHT - 30))
         self.velocity = Vector2(0, 0)
         self.acceleration = Vector2(0, 0)
+
+    def draw(self, surface: Surface) -> None:
+        surface.blit(source=self.surface, dest=self.rectangle)
     
     def move(self) -> None:
         self.acceleration = Vector2(0,0)
@@ -91,7 +93,9 @@ class Platform(Sprite):
         self.velocity = Vector2(0, 0)
         self.acceleration = Vector2(0, 0)
     
-
+    # TODO: Add an overlying class -- this is all common stuff
+    def draw(self, surface: Surface) -> None:
+        surface.blit(source=self.surface, dest=self.rectangle)
 
 def main():
     pygame.init()
@@ -109,7 +113,6 @@ def main():
 
     while True:
         pygame.display.update()
-        player_1.move()
 
         event: Event
         for event in pygame.event.get():
@@ -117,13 +120,15 @@ def main():
                 pygame.quit()
                 sys.exit(0)
             display_surface.fill(BLACK)
-        
+
+        player_1.move()
 
         entity: Sprite
         for entity in all_sprites:
             # import pdb
             # pdb.set_trace()
-            display_surface.blit(source=entity.surface, dest=entity.rectangle)
+            display_surface.fill(BLACK)
+            entity.draw(surface=display_surface)
         
         game_clock.tick(FPS)
 
