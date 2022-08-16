@@ -8,7 +8,7 @@ from pygame import K_LEFT, K_RIGHT, K_UP, K_DOWN
 from pygame.event import Event
 from pygame.key import ScancodeWrapper
 from pygame.math import Vector2
-from pygame.sprite import Group, Sprite, spritecollideany
+from pygame.sprite import Group, Sprite, spritecollideany, spritecollide
 from pygame.time import Clock
 
 HEIGHT: Final[int] = 450
@@ -29,38 +29,44 @@ class Player(Sprite):
         super().__init__()
         self.surface = Surface(size=size)
         self.surface.fill(color=fill_color)
-        self.rectangle: Rect = self.surface.get_rect()
+        self.rect: Rect = self.surface.get_rect()
 
         # Vector2 takes individual ordinates for its argument OR
         # a tuple of coordinates.
-        self.position = Vector2((10, HEIGHT - 30))
+        self.position = Vector2((WIDTH // 2, HEIGHT // 2))
         self.velocity = Vector2(0, 0)
         self.acceleration = Vector2(0, 0)
 
     def draw(self, surface: Surface) -> None:
-        surface.blit(source=self.surface, dest=self.rectangle)
+        surface.blit(source=self.surface, dest=self.rect)
     
-    def move(self) -> None:
+    def move(self, collide=False) -> None:
         self.acceleration = Vector2(0,0)
 
         pressed_keys: ScancodeWrapper = pygame.key.get_pressed()
 
+        if collide and self.velocity != Vector2(0,0):
+            self.velocity = Vector2(0,0)# -self.velocity
+            self.acceleration = Vector2(0,0)
+        else:
         # Here, we're using ScancodeWrapper, which is a very bizarre
         # class that uses an indexing scheme to address specific keys
         # that are pulled as constants from the pygame main module.
-        if pressed_keys[K_LEFT]:
-            self.acceleration.x = -ACCELERATION
-        if pressed_keys[K_RIGHT]:
-            self.acceleration.x = ACCELERATION
-        # Origin is in the top-left, so these are opposite what
-        # one might expect
-        if pressed_keys[K_UP]:
-            self.acceleration.y = -ACCELERATION
-        if pressed_keys[K_DOWN]:
-            self.acceleration.y = ACCELERATION
+            if pressed_keys[K_LEFT]:
+                self.acceleration.x = -ACCELERATION
+            if pressed_keys[K_RIGHT]:
+                self.acceleration.x = ACCELERATION
+            # Origin is in the top-left, so these are opposite what
+            # one might expect
+            if pressed_keys[K_UP]:
+                self.acceleration.y = -ACCELERATION
+            if pressed_keys[K_DOWN]:
+                self.acceleration.y = ACCELERATION
         
         # Motion equations. Yawn.
+        print(f"currentacc {self.acceleration}")
         self.acceleration += self.velocity * FRICTION
+        print(f"Now adding to velocity {self.acceleration}")
         self.velocity += self.acceleration
         self.position += self.velocity + (0.5 * self.acceleration)
 
@@ -77,7 +83,7 @@ class Player(Sprite):
         if self.position.y < 0:
             self.position.y = HEIGHT
 
-        self.rectangle.midbottom = self.position
+        self.rect.midbottom = self.position
 
 
 class Wall(Sprite):
@@ -87,7 +93,7 @@ class Wall(Sprite):
         super().__init__()
         self.surface = Surface(size=size)
         self.surface.fill(color=fill_color)
-        self.rectangle: Rect = self.surface.get_rect()
+        self.rect: Rect = self.surface.get_rect()
 
         self.position = Vector2(initial_postition)
         self.velocity = Vector2(0, 0)
@@ -95,7 +101,7 @@ class Wall(Sprite):
     
     # TODO: Add an overlying class -- this is all common stuff
     def draw(self, surface: Surface) -> None:
-        surface.blit(source=self.surface, dest=self.rectangle)
+        surface.blit(source=self.surface, dest=self.rect)
 
 def main():
     pygame.init()
@@ -107,11 +113,15 @@ def main():
     
     wall_1 = Wall(size=(WIDTH, 20), initial_postition=(WIDTH // 2, HEIGHT - 10))
     player_1 = Player()
+    # Puts player sprite to initial position
+    player_1.move()
 
     all_sprites = Group()
     walls = Group()
     all_sprites.add([wall_1, player_1])
     walls.add([wall_1])
+    import pdb
+    # pdb.set_trace()
 
     while True:
         pygame.display.update()
@@ -123,7 +133,14 @@ def main():
                 sys.exit(0)
             display_surface.fill(BLACK)
 
-        player_1.move()
+        hits = spritecollide(sprite=player_1, group=walls, dokill=False)
+        if not hits:
+            player_1.move()
+        else:
+            # player_1.position.y += 7
+            player_1.move(collide=True)
+            # pdb.set_trace()
+        # print(hits)
 
         entity: Sprite
         display_surface.fill(BLACK)
