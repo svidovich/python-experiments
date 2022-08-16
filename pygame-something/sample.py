@@ -8,7 +8,7 @@ from pygame import K_LEFT, K_RIGHT, K_UP, K_DOWN
 from pygame.event import Event
 from pygame.key import ScancodeWrapper
 from pygame.math import Vector2
-from pygame.sprite import Group, Sprite
+from pygame.sprite import Group, Sprite, spritecollideany
 from pygame.time import Clock
 
 HEIGHT: Final[int] = 450
@@ -80,10 +80,10 @@ class Player(Sprite):
         self.rectangle.midbottom = self.position
 
 
-class Platform(Sprite):
-    PLATFORM_DEFAULT_FILL = (255, 0, 0)
-    PLATFORM_DEFAULT_SIZE = (WIDTH // 4, 20)
-    def __init__(self, size: Tuple[int]=PLATFORM_DEFAULT_SIZE, fill_color: Tuple[int]=PLATFORM_DEFAULT_FILL, initial_postition: Tuple[int]=ORIGIN):
+class Wall(Sprite):
+    WALL_DEFAULT_FILL = (255, 0, 0)
+    WALL_DEFAULT_SIZE = (WIDTH // 4, 20)
+    def __init__(self, size: Tuple[int]=WALL_DEFAULT_SIZE, fill_color: Tuple[int]=WALL_DEFAULT_FILL, initial_postition: Tuple[int]=ORIGIN):
         super().__init__()
         self.surface = Surface(size=size)
         self.surface.fill(color=fill_color)
@@ -105,11 +105,13 @@ def main():
     print(f'Display surface: {type(display_surface)}')
     pygame.display.set_caption("A Game")
     
-    platform_1 = Platform(size=(WIDTH, 20), initial_postition=(WIDTH // 2, HEIGHT - 10))
+    wall_1 = Wall(size=(WIDTH, 20), initial_postition=(WIDTH // 2, HEIGHT - 10))
     player_1 = Player()
 
     all_sprites = Group()
-    all_sprites.add([platform_1, player_1])
+    walls = Group()
+    all_sprites.add([wall_1, player_1])
+    walls.add([wall_1])
 
     while True:
         pygame.display.update()
@@ -124,10 +126,8 @@ def main():
         player_1.move()
 
         entity: Sprite
+        display_surface.fill(BLACK)
         for entity in all_sprites:
-            # import pdb
-            # pdb.set_trace()
-            display_surface.fill(BLACK)
             entity.draw(surface=display_surface)
         
         game_clock.tick(FPS)
