@@ -7,7 +7,10 @@ do some... stuff.
 # pylint: disable=unspecified-encoding,missing-function-docstring
 
 import argparse
+import json
 import re
+from enum import Enum
+from typing import Callable, Iterator, NamedTuple, Optional
 from xml.etree.ElementTree import Element
 import xml.etree.ElementTree as ET
 
@@ -26,6 +29,239 @@ WIKTIONARY_REVISION_TAG = f"{WIKTIONARY_NS}revision"
 WIKTIONARY_TEXT_TAG = f"{WIKTIONARY_NS}text"
 WIKTIONARY_TITLE_TAG = f"{WIKTIONARY_NS}title"
 
+
+class Tense(str, Enum):
+    """
+    Grammatical Tenses for Serbo-Croatian
+    """
+
+    # Present Tense
+    FIRST_PERSON_PRESENT_SINGULAR = "first_person_present_singular"
+    SECOND_PERSON_PRESENT_SINGULAR = "second_person_present_singular"
+    THIRD_PERSON_PRESENT_SINGULAR = "third_person_present_singular"
+    FIRST_PERSON_PRESENT_PLURAL = "first_person_present_plural"
+    SECOND_PERSON_PRESENT_PLURAL = "second_person_present_plural"
+    THIRD_PERSON_PRESENT_PLURAL = "third_person_present_plural"
+    # Future Tense
+    FIRST_PERSON_FUTURE_SINGULAR_I = "first_person_future_singular_i"
+    SECOND_PERSON_FUTURE_SINGULAR_I = "second_person_future_singular_i"
+    THIRD_PERSON_FUTURE_SINGULAR_I = "third_person_future_singular_i"
+    FIRST_PERSON_FUTURE_PLURAL_I = "first_person_future_plural_i"
+    SECOND_PERSON_FUTURE_PLURAL_I = "second_person_future_plural_i"
+    THIRD_PERSON_FUTURE_PLURAL_I = "third_person_future_plural_i"
+    # "Unclear" Future Tense ( he will have, etc. )
+    FIRST_PERSON_FUTURE_SINGULAR_II = "first_person_future_singular_ii"
+    SECOND_PERSON_FUTURE_SINGULAR_II = "second_person_future_singular_ii"
+    THIRD_PERSON_FUTURE_SINGULAR_II = "third_person_future_singular_ii"
+    FIRST_PERSON_FUTURE_PLURAL_II = "first_person_future_plural_ii"
+    SECOND_PERSON_FUTURE_PLURAL_II = "second_person_future_plural_ii"
+    THIRD_PERSON_FUTURE_PLURAL_II = "third_person_future_plural_ii"
+    # Past Tense
+    FIRST_PERSON_PAST_PERFECT_SINGULAR = "first_person_past_perfect_singular"
+    SECOND_PERSON_PAST_PERFECT_SINGULAR = "second_person_past_perfect_singular"
+    THIRD_PERSON_PAST_PERFECT_SINGULAR = "third_person_past_perfect_singular"
+    FIRST_PERSON_PAST_PERFECT_PLURAL = "first_person_past_perfect_plural"
+    SECOND_PERSON_PAST_PERFECT_PLURAL = "second_person_past_perfect_plural"
+    THIRD_PERSON_PAST_PERFECT_PLURAL = "third_person_past_perfect_plural"
+    # Completed Past Tense ( he had... )
+    FIRST_PERSON_PAST_PLUPERFECT_SINGULAR = "first_person_past_pluperfect_singular"
+    SECOND_PERSON_PAST_PLUPERFECT_SINGULAR = "second_person_past_pluperfect_singular"
+    THIRD_PERSON_PAST_PLUPERFECT_SINGULAR = "third_person_past_pluperfect_singular"
+    FIRST_PERSON_PAST_PLUPERFECT_PLURAL = "first_person_past_pluperfect_plural"
+    SECOND_PERSON_PAST_PLUPERFECT_PLURAL = "second_person_past_pluperfect_plural"
+    THIRD_PERSON_PAST_PLUPERFECT_PLURAL = "third_person_past_pluperfect_plural"
+    # Imperfect Past Tense ( it used to ... )
+    FIRST_PERSON_PAST_IMPERFECT_SINGULAR = "first_person_past_imperfect_singular"
+    SECOND_PERSON_PAST_IMPERFECT_SINGULAR = "second_person_past_imperfect_singular"
+    THIRD_PERSON_PAST_IMPERFECT_SINGULAR = "third_person_past_imperfect_singular"
+    FIRST_PERSON_PAST_IMPERFECT_PLURAL = "first_person_past_imperfect_plural"
+    SECOND_PERSON_PAST_IMPERFECT_PLURAL = "second_person_past_imperfect_plural"
+    THIRD_PERSON_PAST_IMPERFECT_PLURAL = "third_person_past_imperfect_plural"
+    # ??? Who knows what this does ??? it's intentionally vague
+    FIRST_PERSON_PAST_AORIST_SINGULAR = "first_person_past_aorist_singular"
+    SECOND_PERSON_PAST_AORIST_SINGULAR = "second_person_past_aorist_singular"
+    THIRD_PERSON_PAST_AORIST_SINGULAR = "third_person_past_aorist_singular"
+    FIRST_PERSON_PAST_AORIST_PLURAL = "first_person_past_aorist_plural"
+    SECOND_PERSON_PAST_AORIST_PLURAL = "second_person_past_aorist_plural"
+    THIRD_PERSON_PAST_AORIST_PLURAL = "third_person_past_aorist_plural"
+    # I would...
+    FIRST_PERSON_CONDITIONAL_I_SINGULAR = "first_person_conditional_i_singular"
+    SECOND_PERSON_CONDITIONAL_I_SINGULAR = "second_person_conditional_i_singular"
+    THIRD_PERSON_CONDITIONAL_I_SINGULAR = "third_person_conditional_i_singular"
+    FIRST_PERSON_CONDITIONAL_I_PLURAL = "first_person_conditional_i_plural"
+    SECOND_PERSON_CONDITIONAL_I_PLURAL = "second_person_conditional_i_plural"
+    THIRD_PERSON_CONDITIONAL_I_PLURAL = "third_person_conditional_i_plural"
+    FIRST_PERSON_CONDITIONAL_II_SINGULAR = "first_person_conditional_ii_singular"
+    SECOND_PERSON_CONDITIONAL_II_SINGULAR = "second_person_conditional_ii_singular"
+    THIRD_PERSON_CONDITIONAL_II_SINGULAR = "third_person_conditional_ii_singular"
+    FIRST_PERSON_CONDITIONAL_II_PLURAL = "first_person_conditional_ii_plural"
+    SECOND_PERSON_CONDITIONAL_II_PLURAL = "second_person_conditional_ii_plural"
+    THIRD_PERSON_CONDITIONAL_II_PLURAL = "third_person_conditional_ii_plural"
+    # Commands
+    FIRST_PERSON_IMPERATIVE_SINGULAR = "first_person_imperative_singular"
+    FIRST_PERSON_IMPERATIVE_PLURAL = "first_person_imperative_plural"
+    SECOND_PERSON_IMPERATIVE_PLURAL = "second_person_imperative_plural"
+    # I have / he has / we have
+    ACTIVE_PAST_PARTICIPLE = "active_past_participle"
+
+
+TENSE_BUILDERS: dict[Tense, Callable[[dict[str, str]], Optional[str]]] = {
+    Tense.FIRST_PERSON_PRESENT_SINGULAR: lambda c: c.get("pr.1s"),
+    Tense.SECOND_PERSON_PRESENT_SINGULAR: lambda c: c.get("pr.2s"),
+    Tense.THIRD_PERSON_PRESENT_SINGULAR: lambda c: c.get("pr.3s"),
+    Tense.FIRST_PERSON_PRESENT_PLURAL: lambda c: c.get("pr.1p"),
+    Tense.SECOND_PERSON_PRESENT_PLURAL: lambda c: c.get("pr.2p"),
+    Tense.THIRD_PERSON_PRESENT_PLURAL: lambda c: c.get("pr.3p"),
+    Tense.FIRST_PERSON_FUTURE_SINGULAR_I: lambda c: c["f1.hr"] + " ću"
+    if c.get("f1.hr") is not None
+    else None,
+    Tense.SECOND_PERSON_FUTURE_SINGULAR_I: lambda c: c["f1.hr"] + " ćeš"
+    if c.get("f1.hr") is not None
+    else None,
+    Tense.THIRD_PERSON_FUTURE_SINGULAR_I: lambda c: c["f1.hr"] + " će"
+    if c.get("f1.hr") is not None
+    else None,
+    Tense.FIRST_PERSON_FUTURE_PLURAL_I: lambda c: c["f1.hr"] + " ćemo"
+    if c.get("f1.hr") is not None
+    else None,
+    Tense.SECOND_PERSON_FUTURE_PLURAL_I: lambda c: c["f1.hr"] + " ćete"
+    if c.get("f1.hr") is not None
+    else None,
+    Tense.THIRD_PERSON_FUTURE_PLURAL_I: lambda c: c["f1.hr"] + " će"
+    if c.get("f1.hr") is not None
+    else None,
+    Tense.FIRST_PERSON_FUTURE_SINGULAR_II: lambda c: "budem " + c["app.ms"]
+    if c.get("app.ms") is not None
+    else None,
+    Tense.SECOND_PERSON_FUTURE_SINGULAR_II: lambda c: "budeš " + c["app.ms"]
+    if c.get("app.ms") is not None
+    else None,
+    Tense.THIRD_PERSON_FUTURE_SINGULAR_II: lambda c: "bude " + c["app.ms"]
+    if c.get("app.ms") is not None
+    else None,
+    Tense.FIRST_PERSON_FUTURE_PLURAL_II: lambda c: "budemo " + c["app.mp"]
+    if c.get("app.mp") is not None
+    else None,
+    Tense.SECOND_PERSON_FUTURE_PLURAL_II: lambda c: "budete " + c["app.mp"]
+    if c.get("app.mp") is not None
+    else None,
+    Tense.THIRD_PERSON_FUTURE_PLURAL_II: lambda c: "budu " + c["app.mp"]
+    if c.get("app.mp") is not None
+    else None,
+    Tense.FIRST_PERSON_PAST_PERFECT_SINGULAR: lambda c: c["app.ms"] + " sam"
+    if c.get("app.ms") is not None
+    else None,
+    Tense.SECOND_PERSON_PAST_PERFECT_SINGULAR: lambda c: c["app.ms"] + " si"
+    if c.get("app.ms") is not None
+    else None,
+    Tense.THIRD_PERSON_PAST_PERFECT_SINGULAR: lambda c: c["app.ms"] + " je"
+    if c.get("app.ms") is not None
+    else None,
+    Tense.FIRST_PERSON_PAST_PERFECT_PLURAL: lambda c: c["app.mp"] + " smo"
+    if c.get("app.mp") is not None
+    else None,
+    Tense.SECOND_PERSON_PAST_PERFECT_PLURAL: lambda c: c["app.mp"] + " ste"
+    if c.get("app.mp") is not None
+    else None,
+    Tense.THIRD_PERSON_PAST_PERFECT_PLURAL: lambda c: c["app.mp"] + " su"
+    if c.get("app.mp") is not None
+    else None,
+    Tense.FIRST_PERSON_PAST_PLUPERFECT_SINGULAR: lambda c: "bio sam " + c["app.ms"]
+    if c.get("app.ms") is not None
+    else None,
+    Tense.SECOND_PERSON_PAST_PLUPERFECT_SINGULAR: lambda c: "bio si " + c["app.ms"]
+    if c.get("app.ms") is not None
+    else None,
+    Tense.THIRD_PERSON_PAST_PLUPERFECT_SINGULAR: lambda c: "bio je " + c["app.ms"]
+    if c.get("app.ms") is not None
+    else None,
+    Tense.FIRST_PERSON_PAST_PLUPERFECT_PLURAL: lambda c: "bili smo " + c["app.mp"]
+    if c.get("app.mp") is not None
+    else None,
+    Tense.SECOND_PERSON_PAST_PLUPERFECT_PLURAL: lambda c: "bili ste " + c["app.mp"]
+    if c.get("app.mp") is not None
+    else None,
+    Tense.THIRD_PERSON_PAST_PLUPERFECT_PLURAL: lambda c: "bili su " + c["app.mp"]
+    if c.get("app.mp") is not None
+    else None,
+    Tense.FIRST_PERSON_PAST_IMPERFECT_SINGULAR: lambda c: c.get("impf.1s"),
+    Tense.SECOND_PERSON_PAST_IMPERFECT_SINGULAR: lambda c: c.get("impf.2s"),
+    Tense.THIRD_PERSON_PAST_IMPERFECT_SINGULAR: lambda c: c.get("impf.3s"),
+    Tense.FIRST_PERSON_PAST_IMPERFECT_PLURAL: lambda c: c.get("impf.1p"),
+    Tense.SECOND_PERSON_PAST_IMPERFECT_PLURAL: lambda c: c.get("impf.2p"),
+    Tense.THIRD_PERSON_PAST_IMPERFECT_PLURAL: lambda c: c.get("impf.3p"),
+    Tense.FIRST_PERSON_PAST_AORIST_SINGULAR: lambda c: c.get("a.1s"),
+    Tense.SECOND_PERSON_PAST_AORIST_SINGULAR: lambda c: c.get("a.2s"),
+    Tense.THIRD_PERSON_PAST_AORIST_SINGULAR: lambda c: c.get("a.3s"),
+    Tense.FIRST_PERSON_PAST_AORIST_PLURAL: lambda c: c.get("a.1p"),
+    Tense.SECOND_PERSON_PAST_AORIST_PLURAL: lambda c: c.get("a.2p"),
+    Tense.THIRD_PERSON_PAST_AORIST_PLURAL: lambda c: c.get("a.3p"),
+    Tense.FIRST_PERSON_CONDITIONAL_I_SINGULAR: lambda c: c["app.ms"] + " bih"
+    if c.get("app.ms") is not None
+    else None,
+    Tense.SECOND_PERSON_CONDITIONAL_I_SINGULAR: lambda c: c["app.ms"] + " bi"
+    if c.get("app.ms") is not None
+    else None,
+    Tense.THIRD_PERSON_CONDITIONAL_I_SINGULAR: lambda c: c["app.ms"] + " bi"
+    if c.get("app.ms") is not None
+    else None,
+    Tense.FIRST_PERSON_CONDITIONAL_I_PLURAL: lambda c: c["app.mp"] + " bismo"
+    if c.get("app.mp") is not None
+    else None,
+    Tense.SECOND_PERSON_CONDITIONAL_I_PLURAL: lambda c: c["app.mp"] + " biste"
+    if c.get("app.mp") is not None
+    else None,
+    Tense.THIRD_PERSON_CONDITIONAL_I_PLURAL: lambda c: c["app.mp"] + " bi"
+    if c.get("app.mp") is not None
+    else None,
+    Tense.FIRST_PERSON_CONDITIONAL_II_SINGULAR: lambda c: "bio bih " + c["app.ms"]
+    if c.get("app.ms") is not None
+    else None,
+    Tense.SECOND_PERSON_CONDITIONAL_II_SINGULAR: lambda c: "bio bi " + c["app.ms"]
+    if c.get("app.ms") is not None
+    else None,
+    Tense.THIRD_PERSON_CONDITIONAL_II_SINGULAR: lambda c: "bio bi " + c["app.ms"]
+    if c.get("app.ms") is not None
+    else None,
+    Tense.FIRST_PERSON_CONDITIONAL_II_PLURAL: lambda c: "bili bismo " + c["app.mp"]
+    if c.get("app.mp") is not None
+    else None,
+    Tense.SECOND_PERSON_CONDITIONAL_II_PLURAL: lambda c: "bili biste " + c["app.mp"]
+    if c.get("app.mp") is not None
+    else None,
+    Tense.THIRD_PERSON_CONDITIONAL_II_PLURAL: lambda c: "bili bi " + c["app.mp"]
+    if c.get("app.mp") is not None
+    else None,
+    Tense.FIRST_PERSON_IMPERATIVE_SINGULAR: lambda c: c.get("impt.2s"),
+    Tense.FIRST_PERSON_IMPERATIVE_PLURAL: lambda c: c.get("impt.1p"),
+    Tense.SECOND_PERSON_IMPERATIVE_PLURAL: lambda c: c.get("impt.2p"),
+    # TODO Active past participle. Get advice from a linguist.
+}
+
+
+def build_tenses(tense_data: dict) -> dict[Tense, Optional[str]]:
+    return {tense: builder(tense_data) for tense, builder in TENSE_BUILDERS.items()}
+
+
+class NamedTense(NamedTuple):
+    name_pretty: str
+    name_short: str
+
+
+WIKTIONARY_TENSES = {
+    "pr.1s": NamedTense(
+        name_pretty="First Person Present, Singular", name_short="FPPS"
+    ),
+    "pr.2s": NamedTense(
+        name_pretty="Second Person Present, Singular", name_short="SPPS"
+    ),
+    "pr.3s": NamedTense(
+        name_pretty="Third Person Present, Singular", name_short="TPPS"
+    ),
+    "pr.1p": NamedTense(name_pretty="First Person Present, Plural", name_short="FPPP"),
+    "pr.2p": NamedTense(name_pretty="Second Person Present, Plural", name_short="SPPP"),
+    "pr.3p": NamedTense(name_pretty="Third Person Present, Plural", name_short="TPPP"),
+}
 
 # NOTE
 # Languages that appeared in my filtered list
@@ -118,6 +354,7 @@ GERMANE_LANGUAGES = {
 GOOFY_CHARS = {
     "ā": "a",
     "è": "e",
+    "ē": "e",
     "ȅ": "e",
     "í": "i",
     "ȉ": "i",
@@ -135,9 +372,78 @@ def header_is_language(header: str) -> bool:
     return clean_wiki_header(header=header) in GERMANE_LANGUAGES
 
 
-def iterate_xml(xml_path: str) -> None:
+def strip_links(string: str) -> str:
+    return string.replace("[", "").replace("]", "")
+
+
+def clean_conjugation_entries(entries: list[str]) -> Optional[dict]:
+    output = {}
+    for entry in entries:
+        if entry.startswith("|"):
+            try:
+                tense, conjugation = tuple(
+                    strip_links(entry).replace("|", "").split("=")
+                )
+            except ValueError:
+                print(
+                    "Failed to clean conjugation section. Section isn't "
+                    "in templated form."
+                )
+                return None
+            if "<br" in conjugation:
+                # NOTE I've only ever seen <br/>, <br> and <br />.
+                # I think a bot does this automagically?
+                split_term = ""
+                if "<br />" in conjugation:
+                    split_term = "<br />"
+                elif "<br/>" in conjugation:
+                    split_term = "<br/>"
+                elif "<br>" in conjugation:
+                    split_term = "<br>"
+                else:
+                    raise ValueError(f"Goofy line-break in conjugation: {conjugation}")
+
+                possibilities = conjugation.split(split_term)
+                if "impf" in conjugation:
+                    # If we're deciding whether or not we should take the imperfect
+                    # form or the perfect form, we'll take the imperfect form.
+                    with_impf = list(
+                        filter(
+                            lambda e: "impf." in e and not "impf.," in e, possibilities
+                        ),
+                    )
+                    if len(with_impf) != 1:
+                        raise ValueError(
+                            f"Goofy state for conjugation {conjugation}: "
+                            f"resultant list is {with_impf}"
+                        )
+                    # Sample: " sam ''(impf.)''"
+                    conjugation = with_impf[0].replace("''(impf.)''", "").strip()
+
+                else:
+                    # If it's just a split-line because you can say it either way,
+                    # just take the first one.
+                    if len(possibilities) < 2:
+                        raise ValueError(
+                            f"Goofy state for conjugation: {conjugation}: "
+                            f"resultant list is {possibilities}"
+                        )
+                    conjugation = possibilities[0]
+            new_conjugation = str()
+            for character in conjugation:
+                if character in GOOFY_CHARS:
+                    new_conjugation += GOOFY_CHARS[character]
+                else:
+                    new_conjugation += character
+            output[tense] = new_conjugation
+
+    return output
+
+
+def iterate_xml(xml_path: str) -> Iterator[dict]:
     context = ET.iterparse(xml_path, events=("start", "end"))
     conjugations_missing = 0
+
     for i, (event, element) in enumerate(context):
         if i == 0:
             root = element
@@ -201,13 +507,33 @@ def iterate_xml(xml_path: str) -> None:
                             break
                         j += 1
 
-                    # print(clean_wiki_header(line))
+                    if conjugation_found and not conjugation_section:
+                        conjugation_found = False
+                    if verb_found and not verb_section:
+                        verb_found = False
+
             if not conjugation_section:
+                conjugation_found = False
                 print(f"No conjugation section for {word}!")
                 conjugations_missing += 1
-            breakpoint()
-            print()
+                continue
+            cleaned_conjugation_entries = clean_conjugation_entries(conjugation_section)
+            if not cleaned_conjugation_entries:
+                print(f"No interesting conjugation entries for {word}!")
+                conjugations_missing += 1
+                continue
+            tenses = build_tenses(tense_data=cleaned_conjugation_entries)
+
+            yield {
+                "word": word,
+                "conjugations": tenses,
+            }
+
         root.clear()
+    print(
+        f"Got done formatting stuff. {conjugations_missing} verbs had missing "
+        "or broken conjugation sections."
+    )
 
 
 def main() -> None:
@@ -215,8 +541,21 @@ def main() -> None:
     parser.add_argument(
         "-i", "--input-file", help="The XML file to read.", required=True
     )
+    parser.add_argument(
+        "-o",
+        "--output-file",
+        help="The JSON file to write.",
+        required=False,
+        default="output.json",
+    )
     args = parser.parse_args()
-    iterate_xml(xml_path=args.input_file)
+    with open(args.output_file, "w") as file_handle:
+        json.dump(
+            {word["word"]: word for word in iterate_xml(xml_path=args.input_file)},
+            file_handle,
+            ensure_ascii=False,
+        )
+        print(f"Wrote to {args.output_file}...")
 
 
 if __name__ == "__main__":
