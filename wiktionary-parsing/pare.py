@@ -8,13 +8,11 @@ match our words of interest, and save it off to a new location.
 # pylint: disable=unspecified-encoding,missing-function-docstring
 
 import argparse
-import re
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import Element
 
 from typing import Iterator
 
-WIKTIONARY_SECTION_HEADER = re.compile("^={2}[A-Za-z\-]+={2}$")
 
 WIKTIONARY_NS = "{http://www.mediawiki.org/xml/export-0.10/}"
 WIKTIONARY_PAGE_TAG = f"{WIKTIONARY_NS}page"
