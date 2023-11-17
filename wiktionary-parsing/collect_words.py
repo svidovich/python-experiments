@@ -2,7 +2,22 @@
 collect_words.py
 
 Given the document output from pare.py,
-do some... stuff.
+it will construct all of the conjugations for all of the words,
+and output them in a big JSON blob to a file of your choice shaped
+like this:
+
+{
+  "abdicirati": {
+    "word": "abdicirati",
+    "english": "to abdicate",
+    "conjugations": {
+      "first_person_present_singular": "abdiciram",
+      "second_person_present_singular": "abdiciraš",
+      "third_person_present_singular": "abdicira",
+      "first_person_present_plural": "abdiciramo",
+      "second_person_present_plural": "abdicirate", ...
+    }, ...
+}
 """
 # pylint: disable=unspecified-encoding,missing-function-docstring
 
@@ -10,8 +25,8 @@ import argparse
 import json
 import re
 from enum import Enum
-from typing import Callable, Iterator, NamedTuple, Optional
-from xml.etree.ElementTree import Element
+from typing import Callable, Iterator, Optional
+
 import xml.etree.ElementTree as ET
 
 WIKTIONARY_SECTION_HEADER = re.compile(r"^={2}[A-Za-z\-]+={2}$")
@@ -332,6 +347,7 @@ GERMANE_LANGUAGES = {
 
 # Srsly what even are these lol
 GOOFY_CHARS = {
+    "à": "a",
     "ā": "a",
     "è": "e",
     "ē": "e",
@@ -436,6 +452,7 @@ def clean_conjugation_entries(entries: list[str]) -> Optional[dict]:
                         )
                     # Sample: " sam ''(impf.)''"
                     conjugation = with_impf[0].replace("''(impf.)''", "").strip()
+                # When they give us a bunch of goofy options, choose the first
 
                 else:
                     # If it's just a split-line because you can say it either way,
@@ -446,6 +463,12 @@ def clean_conjugation_entries(entries: list[str]) -> Optional[dict]:
                             f"resultant list is {possibilities}"
                         )
                     conjugation = possibilities[0]
+            if "/" in conjugation:
+                print(f"Encountered multiple options in {conjugation}.")
+                conjugation = conjugation.split("/")[0].strip()
+            if ", " in conjugation:
+                print(f"Encountered multiple options in {conjugation}.")
+                conjugation = conjugation.split(", ")[0].strip()
             new_conjugation = str()
             for character in conjugation:
                 if character in GOOFY_CHARS:
@@ -582,6 +605,10 @@ def iterate_xml(xml_path: str) -> Iterator[dict]:
                     f"Didn't find an english verb for {word}. Maybe it was an alternative form?"
                 )
                 verbs_missing += 1
+                continue
+            if all(x is None for x in tenses.values()):
+                print(f"Conjugations are missing for {word}!")
+                conjugations_missing += 1
                 continue
             yield {
                 "word": word,

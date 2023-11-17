@@ -76,3 +76,61 @@ This generates an XML file that lookslike this:
 Lmao albanian. Anyway, there's a parent element and each page has its own `<pagecontainer>`.
 
 The filtered XML is about 9.2M, which is _way more workable_.
+
+Next, I needed to parse that into a usable blob of JSON, so I wrote `collect_words.py`.
+
+```shell
+usage: collect_words.py [-h] -i INPUT_FILE [-o OUTPUT_FILE]
+
+options:
+  -h, --help            show this help message and exit
+  -i INPUT_FILE, --input-file INPUT_FILE
+                        The XML file to read.
+  -o OUTPUT_FILE, --output-file OUTPUT_FILE
+                        The JSON file to write.
+```
+
+This takes your pared down XML output from `pare.py` and barfs up JSON of the form
+
+```json
+{
+  "abdicirati": {
+    "word": "abdicirati",
+    "english": "to abdicate",
+    "conjugations": {
+      "first_person_present_singular": "abdiciram",
+      "second_person_present_singular": "abdiciraš",
+      "third_person_present_singular": "abdicira",
+      "first_person_present_plural": "abdiciramo",
+      "second_person_present_plural": "abdicirate", ...
+    }, ...
+  }, ...
+}
+
+```
+
+but with all of the tenses you know and love. There are a couple particulars to discuss.
+
+- Some verbs come with multiple forms in their conjugation, like impf. and pf. We always take the impf there. Maybe that's wrong.
+- We skipped verbs that missed conjugation sections.
+- We skipped verbs without an available english translation.
+- We built the conjugations based on Wiktionary's templating, see [link](https://en.wiktionary.org/wiki/Template:sh-conj).
+- Some verbs come with multiple options, like `bȉjāh / bjȅh / bȅjāh / bȅh`. We take the first option.
+- Oh yeah, we ditch those fancy characters, too.
+
+Now we want to turn it into a CSV, so we wrote `mkcsv.py` that takes the output of `collect_words.py` and makes a nice flat CSV.
+
+```shell
+usage: mkcsv.py [-h] -i INPUT_FILE [-o OUTPUT_FILE]
+
+CSV-ify the results from collect_words.py.
+
+options:
+  -h, --help            show this help message and exit
+  -i INPUT_FILE, --input-file INPUT_FILE
+                        Input JSON document
+  -o OUTPUT_FILE, --output-file OUTPUT_FILE
+                        Output CSV file
+```
+
+The results are in `output.csv` in the repo, since they were small enough to commit.
