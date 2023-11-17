@@ -243,26 +243,6 @@ def build_tenses(tense_data: dict) -> dict[Tense, Optional[str]]:
     return {tense: builder(tense_data) for tense, builder in TENSE_BUILDERS.items()}
 
 
-class NamedTense(NamedTuple):
-    name_pretty: str
-    name_short: str
-
-
-WIKTIONARY_TENSES = {
-    "pr.1s": NamedTense(
-        name_pretty="First Person Present, Singular", name_short="FPPS"
-    ),
-    "pr.2s": NamedTense(
-        name_pretty="Second Person Present, Singular", name_short="SPPS"
-    ),
-    "pr.3s": NamedTense(
-        name_pretty="Third Person Present, Singular", name_short="TPPS"
-    ),
-    "pr.1p": NamedTense(name_pretty="First Person Present, Plural", name_short="FPPP"),
-    "pr.2p": NamedTense(name_pretty="Second Person Present, Plural", name_short="SPPP"),
-    "pr.3p": NamedTense(name_pretty="Third Person Present, Plural", name_short="TPPP"),
-}
-
 # NOTE
 # Languages that appeared in my filtered list
 # Yours may differ
@@ -376,6 +356,43 @@ def strip_links(string: str) -> str:
     return string.replace("[", "").replace("]", "")
 
 
+def get_verb(entries: list[str]) -> Optional[str]:
+    # (to \w+),?\s?
+    # This is fully a wreck, but I'm trying to be quick and compact
+    cleaned_entries = [
+        # First sub drops semicolons nad periods, second drops stuff
+        # inside parentheses. Strip to dump whitespace at ends
+        re.sub(r"[;\.]", "", re.sub(r"\(.*\)", "", cleaned_value)).strip()
+        for cleaned_value in filter(
+            # Filter will drop empty string and null entries
+            bool,
+            [
+                # This sub drops anything between sets of double braces {{}}
+                # We also get rid of the little hash-space line starter
+                re.sub(r"{{.*?}}", "", strip_links(entry.replace("# ", "")))
+                for entry in entries
+                if entry and entry.startswith("# ")
+            ],
+        )
+    ]
+
+    # Now we should have something like
+    # ['to be, to exist', 'to equal, to total, to add up to',
+    # 'there will be, there is going to be, to be coming']
+
+    # Let's split and flatten, and filter for infinitives
+    all_possibilities = [
+        list_item
+        for sublist in cleaned_entries
+        for list_item in sublist.split(", ")
+        if list_item.startswith("to")
+    ]
+    if len(all_possibilities) == 0:
+        return None
+    # After all that... just get the first one lol.
+    return all_possibilities[0]
+
+
 def clean_conjugation_entries(entries: list[str]) -> Optional[dict]:
     output = {}
     for entry in entries:
@@ -443,7 +460,8 @@ def clean_conjugation_entries(entries: list[str]) -> Optional[dict]:
 def iterate_xml(xml_path: str) -> Iterator[dict]:
     context = ET.iterparse(xml_path, events=("start", "end"))
     conjugations_missing = 0
-
+    verbs_missing = 0
+    # For every element in the document,
     for i, (event, element) in enumerate(context):
         if i == 0:
             root = element
@@ -458,12 +476,16 @@ def iterate_xml(xml_path: str) -> Iterator[dict]:
             text = revision.find(WIKTIONARY_TEXT_TAG)
             if text is None:
                 continue
+            # Here is where things get interesting.
             text_lines = text.text.splitlines()
             verb_section = []
             verb_found = False
             conjugation_section = []
             conjugation_found = False
+            # For every line of the article text,
             for index, line in enumerate(text_lines):
+                # If we find a ==Serbo-Croatian== header, it's
+                # time to stop and look around.
                 if WIKTIONARY_SERBO_CROATIAN_HEADER.match(line) is not None:
                     # I could make these functions, but meh.
                     # Chomp this section until we find conjugations.
@@ -471,22 +493,46 @@ def iterate_xml(xml_path: str) -> Iterator[dict]:
                     j = index
                     while True:
                         if (
+                            # If we haven't found a conjugation for this verb yet,
+                            # but we _do_ see a conjugation header,
                             not conjugation_found
                             and CONJUGATION_HEADER.match(text_lines[j]) is not None
                         ):
+                            # Say we found it, for now.
                             conjugation_found = True
+                            # Set an index based on the line we're at where we can
+                            # see the header.
                             k = j + 1
                             while True:
+                                # Starting at the line after the header, collect
+                                # the current line if it ISN'T another section header.
                                 if not WIKTIONARY_ANY_HEADER.match(text_lines[k]):
                                     conjugation_section.append(text_lines[k])
+                                # If it IS another section header, it means that we're
+                                # done collecting this section, and we need to break
+                                # this loop.
                                 else:
                                     break
+                                # Alternatively, if the next line we look at would be
+                                # past the page, we should _also_ break the loop. Otherwise
+                                # we're wandering off into the no.
                                 if k + 1 >= len(text_lines):
                                     break
+                                # Finally, if we haven't broken out, then we still have
+                                # more lines to collect for this section. Add to our index.
                                 k += 1
+                        # If we've run out of lines in the page,
+                        # then we should stop scanning the page.
                         if j + 1 >= len(text_lines):
                             break
                         j += 1
+
+                    # Now: If we found the conjugation section but we didn't wind up
+                    # With any entries, something goofy happened and we should continue on.
+                    if conjugation_found and not conjugation_section:
+                        conjugation_found = False
+                    # See the above loop for documentation on how this works.
+                    # It's essentially the same with some different conditionals.
                     j = index
                     while True:
                         if (
@@ -507,8 +553,6 @@ def iterate_xml(xml_path: str) -> Iterator[dict]:
                             break
                         j += 1
 
-                    if conjugation_found and not conjugation_section:
-                        conjugation_found = False
                     if verb_found and not verb_section:
                         verb_found = False
 
@@ -517,22 +561,40 @@ def iterate_xml(xml_path: str) -> Iterator[dict]:
                 print(f"No conjugation section for {word}!")
                 conjugations_missing += 1
                 continue
+            if not verb_section:
+                verb_found = False
+                print(f"No verb section for {word}!")
+                verbs_missing += 1
+                continue
+            # Clean up the conjugation section.
             cleaned_conjugation_entries = clean_conjugation_entries(conjugation_section)
+            # It's possible that we had a non-null conjugation section that just
+            # didn't have anything interesting in it. After cleaning, we should
+            # wind up with nothing.
             if not cleaned_conjugation_entries:
                 print(f"No interesting conjugation entries for {word}!")
                 conjugations_missing += 1
                 continue
             tenses = build_tenses(tense_data=cleaned_conjugation_entries)
-
+            english_verb = get_verb(entries=verb_section)
+            if not english_verb:
+                print(
+                    f"Didn't find an english verb for {word}. Maybe it was an alternative form?"
+                )
+                verbs_missing += 1
+                continue
             yield {
                 "word": word,
+                "english": english_verb,
                 "conjugations": tenses,
             }
 
         root.clear()
     print(
         f"Got done formatting stuff. {conjugations_missing} verbs had missing "
-        "or broken conjugation sections."
+        f"or broken conjugation sections. I also failed to deal with {verbs_missing} "
+        "verbs -- I couldn't get an english translation for them. These numbers don't "
+        "necessarily overlap 100%."
     )
 
 
@@ -550,8 +612,15 @@ def main() -> None:
     )
     args = parser.parse_args()
     with open(args.output_file, "w") as file_handle:
+        output = {
+            entry["word"]: entry
+            for entry in sorted(
+                [word for word in iterate_xml(xml_path=args.input_file)],
+                key=lambda e: e["word"],
+            )
+        }
         json.dump(
-            {word["word"]: word for word in iterate_xml(xml_path=args.input_file)},
+            output,
             file_handle,
             ensure_ascii=False,
         )
